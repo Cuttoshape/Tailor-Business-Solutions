@@ -1,4 +1,4 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
 
 class APIClient {
   private token: string | null = null;
@@ -101,11 +101,9 @@ class APIClient {
       return this.get(`/orders${query}`);
     },
     getOne: (id: string) => this.get(`/orders/${id}`),
+    getStats: () => this.get('/orders/stats'),
     create: (data: any) => this.post('/orders', data),
-    updateStatus: (id: string, status: string) =>
-      this.patch(`/orders/${id}/status`, { status }),
-    updatePayment: (id: string, payment: number) =>
-      this.patch(`/orders/${id}/payment`, { payment }),
+    update: (id: string, data: any) => this.put(`/orders/${id}`, data),
     delete: (id: string) => this.delete(`/orders/${id}`),
   };
 
@@ -127,10 +125,9 @@ class APIClient {
     },
     getOne: (id: string) => this.get(`/invoices/${id}`),
     create: (data: any) => this.post('/invoices', data),
+    update: (id: string, data: any) => this.put(`/invoices/${id}`, data),
     generatePDF: (id: string) => this.post(`/invoices/${id}/generate-pdf`),
     sendEmail: (id: string) => this.post(`/invoices/${id}/send-email`),
-    updateStatus: (id: string, status: string) =>
-      this.patch(`/invoices/${id}/status`, { status }),
     delete: (id: string) => this.delete(`/invoices/${id}`),
   };
 
@@ -140,6 +137,7 @@ class APIClient {
       return this.get(`/products${query}`);
     },
     getOne: (id: string) => this.get(`/products/${id}`),
+    getCategories: () => this.get('/products/categories'),
     create: (data: any) => this.post('/products', data),
     update: (id: string, data: any) => this.put(`/products/${id}`, data),
     delete: (id: string) => this.delete(`/products/${id}`),
@@ -147,16 +145,23 @@ class APIClient {
 
   analytics = {
     getDashboard: () => this.get('/analytics/dashboard'),
-    getRevenue: (period?: string) => {
-      const query = period ? `?period=${period}` : '';
+    getRevenue: (params?: any) => {
+      const query = params ? `?${new URLSearchParams(params)}` : '';
       return this.get(`/analytics/revenue${query}`);
     },
     getTopProducts: (limit?: number) => {
       const query = limit ? `?limit=${limit}` : '';
       return this.get(`/analytics/top-products${query}`);
     },
+    getTopCustomers: (limit?: number) => {
+      const query = limit ? `?limit=${limit}` : '';
+      return this.get(`/analytics/top-customers${query}`);
+    },
     getCustomerInsights: () => this.get('/analytics/customer-insights'),
-    getOrderTrends: () => this.get('/analytics/order-trends'),
+    getOrderTrends: (params?: any) => {
+      const query = params ? `?${new URLSearchParams(params)}` : '';
+      return this.get(`/analytics/order-trends${query}`);
+    },
   };
 }
 

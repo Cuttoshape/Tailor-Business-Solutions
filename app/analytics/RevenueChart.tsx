@@ -1,46 +1,64 @@
-
 'use client';
 
+import { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from 'recharts';
+import apiClient from '@/lib/api';
 
 interface RevenueChartProps {
   period: string;
 }
 
 export default function RevenueChart({ period }: RevenueChartProps) {
-  const getData = (period: string) => {
-    const data = {
-      '7d': [
-        { name: 'Mon', revenue: 65000 },
-        { name: 'Tue', revenue: 45000 },
-        { name: 'Wed', revenue: 85000 },
-        { name: 'Thu', revenue: 72000 },
-        { name: 'Fri', revenue: 95000 },
-        { name: 'Sat', revenue: 68000 },
-        { name: 'Sun', revenue: 55000 }
-      ],
-      '30d': [
-        { name: 'Week 1', revenue: 320000 },
-        { name: 'Week 2', revenue: 480000 },
-        { name: 'Week 3', revenue: 520000 },
-        { name: 'Week 4', revenue: 630000 }
-      ],
-      '90d': [
-        { name: 'Month 1', revenue: 1950000 },
-        { name: 'Month 2', revenue: 1850000 },
-        { name: 'Month 3', revenue: 2050000 }
-      ],
-      '1y': [
-        { name: 'Q1', revenue: 5850000 },
-        { name: 'Q2', revenue: 6200000 },
-        { name: 'Q3', revenue: 5950000 },
-        { name: 'Q4', revenue: 5400000 }
-      ]
+  const [data, setData] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const result: any = await apiClient.analytics.getRevenue({
+          period,
+          startDate: getStartDate(period),
+          endDate: new Date().toISOString()
+        });
+
+        const formattedData = (result.analytics || []).map((item: any) => ({
+          name: formatDate(item.date),
+          revenue: parseFloat(item.revenue) || 0
+        }));
+
+        setData(formattedData);
+      } catch (error) {
+        console.error('Failed to fetch revenue data:', error);
+        setData([]);
+      } finally {
+        setLoading(false);
+      }
     };
-    return data[period as keyof typeof data];
+
+    fetchData();
+  }, [period]);
+
+  const getStartDate = (period: string): string => {
+    const now = new Date();
+    switch (period) {
+      case '7d':
+        return new Date(now.setDate(now.getDate() - 7)).toISOString();
+      case '30d':
+        return new Date(now.setDate(now.getDate() - 30)).toISOString();
+      case '90d':
+        return new Date(now.setDate(now.getDate() - 90)).toISOString();
+      case '1y':
+        return new Date(now.setFullYear(now.getFullYear() - 1)).toISOString();
+      default:
+        return new Date(now.setDate(now.getDate() - 7)).toISOString();
+    }
   };
 
-  const data = getData(period);
+  const formatDate = (dateString: string): string => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  };
 
   return (
     <div className="bg-white rounded-xl p-4 shadow-sm">
@@ -51,33 +69,43 @@ export default function RevenueChart({ period }: RevenueChartProps) {
           <span className="text-sm text-gray-600">Revenue</span>
         </div>
       </div>
-      
+
       <div className="h-48">
-        <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={data}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-            <XAxis 
-              dataKey="name" 
-              axisLine={false}
-              tickLine={false}
-              tick={{ fontSize: 12, fill: '#6b7280' }}
-            />
-            <YAxis 
-              axisLine={false}
-              tickLine={false}
-              tick={{ fontSize: 12, fill: '#6b7280' }}
-              tickFormatter={(value) => `₦${(value / 1000)}k`}
-            />
-            <Line 
-              type="monotone" 
-              dataKey="revenue" 
-              stroke="#14b8a6" 
-              strokeWidth={3}
-              dot={{ fill: '#14b8a6', r: 4 }}
-              activeDot={{ r: 6, fill: '#14b8a6' }}
-            />
-          </LineChart>
-        </ResponsiveContainer>
+        {loading ? (
+          <div className="flex items-center justify-center h-full">
+            <p className="text-gray-500">Loading...</p>
+          </div>
+        ) : data.length === 0 ? (
+          <div className="flex items-center justify-center h-full">
+            <p className="text-gray-500">No data available</p>
+          </div>
+        ) : (
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={data}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+              <XAxis
+                dataKey="name"
+                axisLine={false}
+                tickLine={false}
+                tick={{ fontSize: 12, fill: '#6b7280' }}
+              />
+              <YAxis
+                axisLine={false}
+                tickLine={false}
+                tick={{ fontSize: 12, fill: '#6b7280' }}
+                tickFormatter={(value) => `$${(value / 1000).toFixed(1)}k`}
+              />
+              <Line
+                type="monotone"
+                dataKey="revenue"
+                stroke="#14b8a6"
+                strokeWidth={3}
+                dot={{ fill: '#14b8a6', r: 4 }}
+                activeDot={{ r: 6, fill: '#14b8a6' }}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        )}
       </div>
     </div>
   );

@@ -1,47 +1,56 @@
-
 'use client';
+
+import { useState, useEffect } from 'react';
+import apiClient from '@/lib/api';
 
 interface CustomerInsightsProps {
   period: string;
 }
 
 export default function CustomerInsights({ period }: CustomerInsightsProps) {
-  const getInsights = (period: string) => {
-    const insights = {
-      '7d': {
-        newCustomers: 3,
-        returningCustomers: 5,
-        topCustomer: { name: 'Adunni Ade', spent: 125000 },
-        retention: 62
-      },
-      '30d': {
-        newCustomers: 12,
-        returningCustomers: 20,
-        topCustomer: { name: 'Adunni Ade', spent: 500000 },
-        retention: 62
-      },
-      '90d': {
-        newCustomers: 36,
-        returningCustomers: 60,
-        topCustomer: { name: 'Adunni Ade', spent: 1500000 },
-        retention: 62
-      },
-      '1y': {
-        newCustomers: 144,
-        returningCustomers: 240,
-        topCustomer: { name: 'Adunni Ade', spent: 6000000 },
-        retention: 62
+  const [insights, setInsights] = useState({
+    activeCustomers: 0,
+    newCustomersThisMonth: 0,
+    avgOrderValue: 0
+  });
+  const [topCustomers, setTopCustomers] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const [insightsData, customersData]: any = await Promise.all([
+          apiClient.analytics.getCustomerInsights(),
+          apiClient.analytics.getTopCustomers(1)
+        ]);
+
+        setInsights({
+          activeCustomers: insightsData.activeCustomers || 0,
+          newCustomersThisMonth: insightsData.newCustomersThisMonth || 0,
+          avgOrderValue: insightsData.avgOrderValue || 0
+        });
+
+        setTopCustomers(customersData.topCustomers || []);
+      } catch (error) {
+        console.error('Failed to fetch customer insights:', error);
+      } finally {
+        setLoading(false);
       }
     };
-    return insights[period as keyof typeof insights];
-  };
 
-  const insights = getInsights(period);
+    fetchData();
+  }, [period]);
+
+  const topCustomer = topCustomers[0];
+  const retention = insights.activeCustomers > 0
+    ? Math.round((insights.activeCustomers / (insights.activeCustomers + insights.newCustomersThisMonth)) * 100)
+    : 0;
 
   return (
     <div className="space-y-4">
       <h3 className="text-lg font-semibold text-gray-900">Customer Insights</h3>
-      
+
       <div className="grid grid-cols-2 gap-4">
         <div className="bg-white rounded-xl p-4 shadow-sm">
           <div className="flex items-center space-x-3 mb-3">
@@ -49,8 +58,10 @@ export default function CustomerInsights({ period }: CustomerInsightsProps) {
               <i className="ri-user-add-line text-lg text-blue-600"></i>
             </div>
             <div>
-              <p className="text-2xl font-bold text-gray-900">{insights.newCustomers}</p>
-              <p className="text-sm text-gray-600">New Customers</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {loading ? '...' : insights.newCustomersThisMonth}
+              </p>
+              <p className="text-sm text-gray-600">New This Month</p>
             </div>
           </div>
         </div>
@@ -61,50 +72,62 @@ export default function CustomerInsights({ period }: CustomerInsightsProps) {
               <i className="ri-user-heart-line text-lg text-green-600"></i>
             </div>
             <div>
-              <p className="text-2xl font-bold text-gray-900">{insights.returningCustomers}</p>
-              <p className="text-sm text-gray-600">Returning</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {loading ? '...' : insights.activeCustomers}
+              </p>
+              <p className="text-sm text-gray-600">Active</p>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="bg-white rounded-xl p-4 shadow-sm">
-        <div className="flex items-center justify-between mb-4">
-          <h4 className="font-semibold text-gray-900">Top Customer</h4>
-          <span className="text-xs text-green-600 bg-green-50 px-2 py-1 rounded-full">VIP</span>
+      {loading ? (
+        <div className="bg-white rounded-xl p-4 shadow-sm flex items-center justify-center py-8">
+          <p className="text-gray-500">Loading...</p>
         </div>
-        
-        <div className="flex items-center space-x-3">
-          <img 
-            src="https://readdy.ai/api/search-image?query=Professional%20African%20woman%20portrait%2C%20elegant%20business%20attire%2C%20confident%20smile%2C%20studio%20lighting%2C%20clean%20background%2C%20professional%20headshot%20photography%20style&width=60&height=60&seq=customer1&orientation=squarish"
-            alt={insights.topCustomer.name}
-            className="w-12 h-12 rounded-full object-cover"
-          />
-          <div className="flex-1">
-            <p className="font-medium text-gray-900">{insights.topCustomer.name}</p>
-            <p className="text-sm text-gray-600">Total Spent: ₦{insights.topCustomer.spent.toLocaleString()}</p>
+      ) : topCustomer ? (
+        <div className="bg-white rounded-xl p-4 shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <h4 className="font-semibold text-gray-900">Top Customer</h4>
+            <span className="text-xs text-green-600 bg-green-50 px-2 py-1 rounded-full">VIP</span>
           </div>
-          <button className="w-8 h-8 flex items-center justify-center text-teal-600">
-            <i className="ri-arrow-right-line text-lg"></i>
-          </button>
+
+          <div className="flex items-center space-x-3">
+            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-teal-400 to-teal-600 flex items-center justify-center">
+              <span className="text-white text-lg font-bold">
+                {topCustomer.name?.charAt(0).toUpperCase() || 'C'}
+              </span>
+            </div>
+            <div className="flex-1">
+              <p className="font-medium text-gray-900">{topCustomer.name}</p>
+              <p className="text-sm text-gray-600">Total Spent: ${parseFloat(topCustomer.totalSpent).toLocaleString()}</p>
+            </div>
+            <button className="w-8 h-8 flex items-center justify-center text-teal-600">
+              <i className="ri-arrow-right-line text-lg"></i>
+            </button>
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="bg-white rounded-xl p-4 shadow-sm flex items-center justify-center py-8">
+          <p className="text-gray-500">No customer data available</p>
+        </div>
+      )}
 
       <div className="bg-white rounded-xl p-4 shadow-sm">
         <div className="flex items-center justify-between mb-3">
           <h4 className="font-semibold text-gray-900">Customer Retention</h4>
-          <span className="text-lg font-bold text-gray-900">{insights.retention}%</span>
+          <span className="text-lg font-bold text-gray-900">{retention}%</span>
         </div>
-        
+
         <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
-          <div 
+          <div
             className="h-full bg-gradient-to-r from-teal-400 to-teal-600 rounded-full transition-all duration-500"
-            style={{ width: `${insights.retention}%` }}
+            style={{ width: `${retention}%` }}
           ></div>
         </div>
-        
+
         <p className="text-sm text-gray-600 mt-2">
-          Great retention rate! Keep up the excellent service.
+          {retention > 60 ? 'Great retention rate! Keep up the excellent service.' : 'Focus on improving customer retention.'}
         </p>
       </div>
     </div>

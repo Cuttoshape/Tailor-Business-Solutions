@@ -1,46 +1,68 @@
-
 'use client';
 
+import { useState, useEffect } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from 'recharts';
+import apiClient from '@/lib/api';
 
 interface OrderTrendsProps {
   period: string;
 }
 
 export default function OrderTrends({ period }: OrderTrendsProps) {
-  const getData = (period: string) => {
-    const data = {
-      '7d': [
-        { name: 'Mon', orders: 2, completed: 1 },
-        { name: 'Tue', orders: 1, completed: 1 },
-        { name: 'Wed', orders: 3, completed: 2 },
-        { name: 'Thu', orders: 2, completed: 2 },
-        { name: 'Fri', orders: 2, completed: 1 },
-        { name: 'Sat', orders: 1, completed: 1 },
-        { name: 'Sun', orders: 1, completed: 0 }
-      ],
-      '30d': [
-        { name: 'Week 1', orders: 8, completed: 6 },
-        { name: 'Week 2', orders: 12, completed: 10 },
-        { name: 'Week 3', orders: 15, completed: 12 },
-        { name: 'Week 4', orders: 13, completed: 11 }
-      ],
-      '90d': [
-        { name: 'Month 1', orders: 48, completed: 39 },
-        { name: 'Month 2', orders: 46, completed: 38 },
-        { name: 'Month 3', orders: 50, completed: 42 }
-      ],
-      '1y': [
-        { name: 'Q1', orders: 144, completed: 119 },
-        { name: 'Q2', orders: 152, completed: 128 },
-        { name: 'Q3', orders: 148, completed: 125 },
-        { name: 'Q4', orders: 132, completed: 110 }
-      ]
-    };
-    return data[period as keyof typeof data];
-  };
+  const [data, setData] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const data = getData(period);
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const result: any = await apiClient.analytics.getOrderTrends({
+          startDate: getStartDate(period),
+          endDate: new Date().toISOString()
+        });
+
+        const trends = result.trends || [];
+        const statusMap: any = {};
+
+        trends.forEach((item: any) => {
+          statusMap[item.status] = parseInt(item.count);
+        });
+
+        const formattedData = [
+          {
+            name: 'Orders',
+            orders: Object.values(statusMap).reduce((a: any, b: any) => a + b, 0),
+            completed: statusMap['completed'] || 0
+          }
+        ];
+
+        setData(formattedData);
+      } catch (error) {
+        console.error('Failed to fetch order trends:', error);
+        setData([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [period]);
+
+  const getStartDate = (period: string): string => {
+    const now = new Date();
+    switch (period) {
+      case '7d':
+        return new Date(now.setDate(now.getDate() - 7)).toISOString();
+      case '30d':
+        return new Date(now.setDate(now.getDate() - 30)).toISOString();
+      case '90d':
+        return new Date(now.setDate(now.getDate() - 90)).toISOString();
+      case '1y':
+        return new Date(now.setFullYear(now.getFullYear() - 1)).toISOString();
+      default:
+        return new Date(now.setDate(now.getDate() - 7)).toISOString();
+    }
+  };
 
   return (
     <div className="bg-white rounded-xl p-4 shadow-sm">
@@ -57,26 +79,36 @@ export default function OrderTrends({ period }: OrderTrendsProps) {
           </div>
         </div>
       </div>
-      
+
       <div className="h-48">
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={data} barCategoryGap="20%">
-            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-            <XAxis 
-              dataKey="name" 
-              axisLine={false}
-              tickLine={false}
-              tick={{ fontSize: 12, fill: '#6b7280' }}
-            />
-            <YAxis 
-              axisLine={false}
-              tickLine={false}
-              tick={{ fontSize: 12, fill: '#6b7280' }}
-            />
-            <Bar dataKey="orders" fill="#3b82f6" radius={[4, 4, 0, 0]} />
-            <Bar dataKey="completed" fill="#10b981" radius={[4, 4, 0, 0]} />
-          </BarChart>
-        </ResponsiveContainer>
+        {loading ? (
+          <div className="flex items-center justify-center h-full">
+            <p className="text-gray-500">Loading...</p>
+          </div>
+        ) : data.length === 0 ? (
+          <div className="flex items-center justify-center h-full">
+            <p className="text-gray-500">No data available</p>
+          </div>
+        ) : (
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={data} barCategoryGap="20%">
+              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+              <XAxis
+                dataKey="name"
+                axisLine={false}
+                tickLine={false}
+                tick={{ fontSize: 12, fill: '#6b7280' }}
+              />
+              <YAxis
+                axisLine={false}
+                tickLine={false}
+                tick={{ fontSize: 12, fill: '#6b7280' }}
+              />
+              <Bar dataKey="orders" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="completed" fill="#10b981" radius={[4, 4, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        )}
       </div>
     </div>
   );

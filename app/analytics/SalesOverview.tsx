@@ -1,47 +1,48 @@
-
 'use client';
+
+import { useState, useEffect } from 'react';
+import apiClient from '@/lib/api';
 
 interface SalesOverviewProps {
   period: string;
 }
 
 export default function SalesOverview({ period }: SalesOverviewProps) {
-  const getMetrics = (period: string) => {
-    const metrics = {
-      '7d': {
-        revenue: 485000,
-        orders: 12,
-        customers: 8,
-        avgOrder: 40417
-      },
-      '30d': {
-        revenue: 1950000,
-        orders: 48,
-        customers: 32,
-        avgOrder: 40625
-      },
-      '90d': {
-        revenue: 5850000,
-        orders: 144,
-        customers: 96,
-        avgOrder: 40625
-      },
-      '1y': {
-        revenue: 23400000,
-        orders: 576,
-        customers: 384,
-        avgOrder: 40625
+  const [metrics, setMetrics] = useState({
+    totalRevenue: 0,
+    totalOrders: 0,
+    totalCustomers: 0,
+    pendingOrders: 0
+  });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const data: any = await apiClient.analytics.getDashboard();
+        setMetrics({
+          totalRevenue: data.totalRevenue || 0,
+          totalOrders: data.totalOrders || 0,
+          totalCustomers: data.totalCustomers || 0,
+          pendingOrders: data.pendingOrders || 0
+        });
+      } catch (error) {
+        console.error('Failed to fetch dashboard stats:', error);
+      } finally {
+        setLoading(false);
       }
     };
-    return metrics[period as keyof typeof metrics];
-  };
 
-  const metrics = getMetrics(period);
+    fetchData();
+  }, [period]);
+
+  const avgOrder = metrics.totalOrders > 0 ? metrics.totalRevenue / metrics.totalOrders : 0;
 
   const cards = [
     {
       title: 'Total Revenue',
-      value: `₦${metrics.revenue.toLocaleString()}`,
+      value: loading ? '...' : `$${metrics.totalRevenue.toLocaleString()}`,
       change: '+12.5%',
       icon: 'ri-money-dollar-circle-line',
       color: 'text-green-600',
@@ -49,15 +50,15 @@ export default function SalesOverview({ period }: SalesOverviewProps) {
     },
     {
       title: 'Total Orders',
-      value: metrics.orders.toString(),
+      value: loading ? '...' : metrics.totalOrders.toString(),
       change: '+8.2%',
       icon: 'ri-shopping-bag-line',
       color: 'text-blue-600',
       bgColor: 'bg-blue-50'
     },
     {
-      title: 'New Customers',
-      value: metrics.customers.toString(),
+      title: 'Total Customers',
+      value: loading ? '...' : metrics.totalCustomers.toString(),
       change: '+15.3%',
       icon: 'ri-user-add-line',
       color: 'text-purple-600',
@@ -65,7 +66,7 @@ export default function SalesOverview({ period }: SalesOverviewProps) {
     },
     {
       title: 'Avg Order Value',
-      value: `₦${metrics.avgOrder.toLocaleString()}`,
+      value: loading ? '...' : `$${avgOrder.toFixed(2)}`,
       change: '+5.7%',
       icon: 'ri-bar-chart-line',
       color: 'text-orange-600',
