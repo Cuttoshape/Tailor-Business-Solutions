@@ -45,7 +45,7 @@ export default function Measurements() {
     { key: 'thigh', label: 'Thigh (of one leg)', unit: 'inches' }
   ];
 
-  const [measurementData, setMeasurementData] = useState({});
+  const [measurementData, setMeasurementData] = useState<Record<string, string>>({});
 
   const handleMeasurementChange = (key: string, value: string) => {
     setMeasurementData(prev => ({

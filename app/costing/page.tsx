@@ -24,7 +24,7 @@ export default function Costing() {
     'Packaging & Labeling Materials'
   ];
 
-  const categoryItems = {
+  const categoryItems: Record<string, string[]> = {
     'Fabric & Main Materials': ['Fabric', 'Lining', 'Gum stay', 'Net'],
     'Sewing Essentials': ['Thread', 'Zippers', 'Button', 'Hooks & loop tape', 'Machine oil'],
     'Embellishments & Decorative Materials': ['Beads', 'Rhinestones', 'Embroidery thread', 'Lace trims'],
@@ -45,7 +45,7 @@ export default function Costing() {
     }]);
   };
 
-  const addQuickItem = (itemName, category) => {
+  const addQuickItem = (itemName: string, category: string) => {
     setItems([...items, { 
       id: Date.now(), 
       name: itemName, 
@@ -77,7 +77,7 @@ export default function Costing() {
     return amount.toFixed(2);
   };
 
-  const getCategoryTotal = (category) => {
+  const getCategoryTotal = (category: string) => {
     return items
       .filter(item => item.category === category)
       .reduce((sum, item) => sum + (item.cost * item.quantity), 0);

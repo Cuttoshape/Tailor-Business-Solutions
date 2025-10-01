@@ -64,7 +64,7 @@ const invoicesData = [
 export default function Invoices() {
   const [activeTab, setActiveTab] = useState('All');
   const [showGenerator, setShowGenerator] = useState(false);
-  const [selectedInvoice, setSelectedInvoice] = useState(null);
+  const [selectedInvoice, setSelectedInvoice] = useState<any>(null);
 
   const tabs = ['All', 'Draft', 'Sent', 'Paid'];
   
@@ -76,7 +76,7 @@ export default function Invoices() {
     .filter(inv => inv.status === 'Paid')
     .reduce((sum, inv) => sum + inv.amount, 0);
 
-  const getStatusColor = (status) => {
+  const getStatusColor = (status: string) => {
     switch (status) {
       case 'Paid': return 'bg-green-100 text-green-800';
       case 'Sent': return 'bg-blue-100 text-blue-800';
@@ -85,7 +85,7 @@ export default function Invoices() {
     }
   };
 
-  const formatDate = (dateString) => {
+  const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       month: '2-digit',
       day: '2-digit',
@@ -93,7 +93,7 @@ export default function Invoices() {
     });
   };
 
-  const formatCurrency = (amount) => {
+  const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-NG', {
       style: 'currency',
       currency: 'NGN',
@@ -103,9 +103,8 @@ export default function Invoices() {
 
   if (showGenerator) {
     return (
-      <InvoiceGenerator 
+      <InvoiceGenerator
         onClose={() => setShowGenerator(false)}
-        editInvoice={selectedInvoice}
       />
     );
   }

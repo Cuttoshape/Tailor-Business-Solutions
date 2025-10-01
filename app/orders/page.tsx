@@ -6,7 +6,7 @@ import Link from 'next/link';
 export default function Orders() {
   const [activeTab, setActiveTab] = useState('all');
   const [showOrderDetails, setShowOrderDetails] = useState(false);
-  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [selectedOrder, setSelectedOrder] = useState<any>(null);
 
   const orders = [
     {
@@ -72,7 +72,7 @@ export default function Orders() {
     }
   };
 
-  const getStatusColor = (status) => {
+  const getStatusColor = (status: string) => {
     switch (status) {
       case 'Completed':
         return 'bg-green-100 text-green-800';

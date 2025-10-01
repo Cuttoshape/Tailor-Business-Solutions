@@ -65,7 +65,7 @@ export default function NewOrderPage() {
       setFormData(prev => ({
         ...prev,
         [parent]: {
-          ...prev[parent as keyof typeof prev],
+          ...(prev[parent as keyof typeof prev] as any),
           [child]: value
         }
       }));
@@ -485,10 +485,9 @@ export default function NewOrderPage() {
         deliveryDate: formData.deliveryDate,
         progress: 0,
         avatar: formData.customerName.split(' ').map(n => n[0]).join('').toUpperCase(),
-        color: 'blue',
+        color: formData.color || 'blue',
         measurements: formData.measurements,
         fabric: formData.fabric,
-        color: formData.color,
         specialRequests: formData.specialRequests,
         urgentOrder: formData.urgentOrder,
         depositAmount: parseFloat(formData.depositAmount) || 0,

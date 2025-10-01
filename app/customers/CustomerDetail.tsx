@@ -189,7 +189,7 @@ export default function CustomerDetail({ customer, onClose }: CustomerDetailProp
                           {key}
                         </div>
                         <div className="text-lg font-bold text-gray-900">
-                          {value}{key === 'height' ? 'cm' : '"'}
+                          {String(value)}{key === 'height' ? 'cm' : '"'}
                         </div>
                       </div>
                     ))}
