@@ -1,11 +1,11 @@
-import puppeteer from 'puppeteer';
-import { Invoice, Order, Customer, OrderItem } from '../models';
+import puppeteer from "puppeteer";
+import { Invoice, Order, Customer, OrderItem } from "../models";
 
 class PDFService {
   async generateInvoicePDF(invoice: Invoice): Promise<Buffer> {
     const browser = await puppeteer.launch({
-      headless: 'new',
-      args: ['--no-sandbox', '--disable-setuid-sandbox']
+      headless: true,
+      args: ["--no-sandbox", "--disable-setuid-sandbox"],
     });
 
     try {
@@ -13,30 +13,30 @@ class PDFService {
 
       const order = await Order.findByPk(invoice.orderId, {
         include: [
-          { model: OrderItem, as: 'items' },
-          { model: Customer, as: 'customer' }
-        ]
+          { model: OrderItem, as: "items" },
+          { model: Customer, as: "customer" },
+        ],
       });
 
       const customer = await Customer.findByPk(invoice.customerId);
 
       if (!order || !customer) {
-        throw new Error('Order or customer not found');
+        throw new Error("Order or customer not found");
       }
 
       const html = this.generateInvoiceHTML(invoice, order, customer);
 
-      await page.setContent(html, { waitUntil: 'networkidle0' });
+      await page.setContent(html, { waitUntil: "networkidle0" });
 
       const pdfBuffer = await page.pdf({
-        format: 'A4',
+        format: "A4",
         printBackground: true,
         margin: {
-          top: '20px',
-          right: '20px',
-          bottom: '20px',
-          left: '20px'
-        }
+          top: "20px",
+          right: "20px",
+          bottom: "20px",
+          left: "20px",
+        },
       });
 
       return Buffer.from(pdfBuffer);
@@ -45,7 +45,11 @@ class PDFService {
     }
   }
 
-  private generateInvoiceHTML(invoice: Invoice, order: Order, customer: Customer): string {
+  private generateInvoiceHTML(
+    invoice: Invoice,
+    order: Order,
+    customer: Customer
+  ): string {
     return `
       <!DOCTYPE html>
       <html>
@@ -139,13 +143,17 @@ class PDFService {
             <p><strong>${customer.name}</strong></p>
             <p>${customer.email}</p>
             <p>${customer.phone}</p>
-            ${customer.address ? `<p>${customer.address}</p>` : ''}
-            ${customer.city ? `<p>${customer.city}</p>` : ''}
+            ${customer.address ? `<p>${customer.address}</p>` : ""}
+            ${customer.city ? `<p>${customer.city}</p>` : ""}
           </div>
           <div class="info-block" style="text-align: right;">
             <p><strong>Invoice Number:</strong> ${invoice.invoiceNumber}</p>
-            <p><strong>Invoice Date:</strong> ${new Date(invoice.invoiceDate).toLocaleDateString()}</p>
-            <p><strong>Due Date:</strong> ${new Date(invoice.dueDate).toLocaleDateString()}</p>
+            <p><strong>Invoice Date:</strong> ${new Date(
+              invoice.invoiceDate
+            ).toLocaleDateString()}</p>
+            <p><strong>Due Date:</strong> ${new Date(
+              invoice.dueDate
+            ).toLocaleDateString()}</p>
             <p><strong>Order Number:</strong> ${order.orderNumber}</p>
           </div>
         </div>
@@ -160,14 +168,20 @@ class PDFService {
             </tr>
           </thead>
           <tbody>
-            ${order.items?.map(item => `
+            ${
+              order.items
+                ?.map(
+                  (item) => `
               <tr>
                 <td>${item.productName}</td>
                 <td>${item.quantity}</td>
                 <td>$${Number(item.unitPrice).toFixed(2)}</td>
                 <td>$${Number(item.totalPrice).toFixed(2)}</td>
               </tr>
-            `).join('') || ''}
+            `
+                )
+                .join("") || ""
+            }
           </tbody>
         </table>
 
@@ -175,35 +189,55 @@ class PDFService {
           <table>
             <tr>
               <td>Subtotal:</td>
-              <td style="text-align: right;">$${Number(invoice.subtotal).toFixed(2)}</td>
+              <td style="text-align: right;">$${Number(
+                invoice.subtotal
+              ).toFixed(2)}</td>
             </tr>
-            ${invoice.discount > 0 ? `
+            ${
+              invoice.discount > 0
+                ? `
             <tr>
               <td>Discount:</td>
-              <td style="text-align: right;">-$${Number(invoice.discount).toFixed(2)}</td>
+              <td style="text-align: right;">-$${Number(
+                invoice.discount
+              ).toFixed(2)}</td>
             </tr>
-            ` : ''}
-            ${invoice.tax > 0 ? `
+            `
+                : ""
+            }
+            ${
+              invoice.tax > 0
+                ? `
             <tr>
               <td>Tax:</td>
-              <td style="text-align: right;">$${Number(invoice.tax).toFixed(2)}</td>
+              <td style="text-align: right;">$${Number(invoice.tax).toFixed(
+                2
+              )}</td>
             </tr>
-            ` : ''}
+            `
+                : ""
+            }
             <tr class="total-row">
               <td>Total:</td>
-              <td style="text-align: right;">$${Number(invoice.total).toFixed(2)}</td>
+              <td style="text-align: right;">$${Number(invoice.total).toFixed(
+                2
+              )}</td>
             </tr>
           </table>
         </div>
 
         <div style="clear: both;"></div>
 
-        ${invoice.notes ? `
+        ${
+          invoice.notes
+            ? `
         <div style="margin-top: 30px;">
           <h3>Notes:</h3>
           <p>${invoice.notes}</p>
         </div>
-        ` : ''}
+        `
+            : ""
+        }
 
         <div class="footer">
           <p>Thank you for your business!</p>

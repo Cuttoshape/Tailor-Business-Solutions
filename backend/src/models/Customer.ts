@@ -1,22 +1,30 @@
-import { Table, Column, Model, DataType, HasMany, CreatedAt, UpdatedAt } from 'sequelize-typescript';
-import { Order } from './Order';
-import { Measurement } from './Measurement';
+import {
+  Table,
+  Column,
+  Model,
+  DataType,
+  HasMany,
+  CreatedAt,
+  UpdatedAt,
+} from "sequelize-typescript";
+import { Order } from "./Order";
+import { Measurement } from "./Measurement";
 
 @Table({
-  tableName: 'customers',
-  timestamps: true
+  tableName: "customers",
+  timestamps: true,
 })
 export class Customer extends Model {
   @Column({
     type: DataType.UUID,
     defaultValue: DataType.UUIDV4,
-    primaryKey: true
+    primaryKey: true,
   })
   id!: string;
 
   @Column({
     type: DataType.STRING,
-    allowNull: false
+    allowNull: false,
   })
   name!: string;
 
@@ -25,44 +33,44 @@ export class Customer extends Model {
     allowNull: false,
     unique: true,
     validate: {
-      isEmail: true
-    }
+      isEmail: true,
+    },
   })
   email!: string;
 
   @Column({
     type: DataType.STRING,
-    allowNull: false
+    allowNull: false,
   })
   phone!: string;
 
   @Column({
     type: DataType.TEXT,
-    allowNull: true
+    allowNull: true,
   })
   address?: string;
 
   @Column({
     type: DataType.STRING,
-    allowNull: true
+    allowNull: true,
   })
   city?: string;
 
   @Column({
     type: DataType.DECIMAL(10, 2),
-    defaultValue: 0
+    defaultValue: 0,
   })
   totalSpent!: number;
 
   @Column({
     type: DataType.INTEGER,
-    defaultValue: 0
+    defaultValue: 0,
   })
   orderCount!: number;
 
   @Column({
     type: DataType.TEXT,
-    allowNull: true
+    allowNull: true,
   })
   notes?: string;
 

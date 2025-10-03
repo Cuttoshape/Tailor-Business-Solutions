@@ -1,41 +1,50 @@
-import { Table, Column, Model, DataType, ForeignKey, BelongsTo, CreatedAt, UpdatedAt } from 'sequelize-typescript';
-import { Customer } from './Customer';
-import { ProductCategory } from './Product';
+import {
+  Table,
+  Column,
+  Model,
+  DataType,
+  ForeignKey,
+  BelongsTo,
+  CreatedAt,
+  UpdatedAt,
+} from "sequelize-typescript";
+import { Customer } from "./Customer";
+import { ProductCategory } from "./Product";
 
 @Table({
-  tableName: 'measurements',
-  timestamps: true
+  tableName: "measurements",
+  timestamps: true,
 })
 export class Measurement extends Model {
   @Column({
     type: DataType.UUID,
     defaultValue: DataType.UUIDV4,
-    primaryKey: true
+    primaryKey: true,
   })
   id!: string;
 
   @ForeignKey(() => Customer)
   @Column({
     type: DataType.UUID,
-    allowNull: false
+    allowNull: false,
   })
   customerId!: string;
 
   @Column({
     type: DataType.ENUM(...Object.values(ProductCategory)),
-    allowNull: false
+    allowNull: false,
   })
   garmentType!: ProductCategory;
 
   @Column({
-    type: DataType.JSONB,
-    allowNull: false
+    type: DataType.JSON,
+    allowNull: false,
   })
   measurements!: Record<string, number>;
 
   @Column({
     type: DataType.TEXT,
-    allowNull: true
+    allowNull: true,
   })
   notes?: string;
 
