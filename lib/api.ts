@@ -2,6 +2,13 @@ const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api";
 
 class APIClient {
+  createBanner(form: FormData) {
+    try {
+      // TODO
+      // return await
+    } catch (e) {}
+    throw new Error("Method not implemented.");
+  }
   private token: string | null = null;
 
   constructor() {
@@ -88,6 +95,9 @@ class APIClient {
     getAll: (params?: any) => {
       const query = params ? `?${new URLSearchParams(params)}` : "";
       return this.get(`/customers${query}`);
+    },
+    getMyCustomer: () => {
+      return this.get(`/customers/my`);
     },
     getOne: (id: string) => this.get(`/customers/${id}`),
     create: (data: any) => this.post("/customers", data),

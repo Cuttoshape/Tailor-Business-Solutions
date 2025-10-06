@@ -11,6 +11,7 @@ export default function AuthFormModal({
   const [mode, setMode] = useState<Mode>("login");
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
+  const [businessName, setBusinessName] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -130,6 +131,7 @@ export default function AuthFormModal({
         // TODO: call your register API
         console.log({ action: "register", email, password });
         const response = (await apiClient.auth.register({
+          businessName,
           name,
           email,
           password,
@@ -236,6 +238,31 @@ export default function AuthFormModal({
                 }`}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
+              />
+              {errors.name && (
+                <p className="mt-1 text-sm text-red-600">{errors.name}</p>
+              )}
+            </div>
+          )}
+
+          {mode === "register" && (
+            <div>
+              <label
+                htmlFor="email"
+                className="mb-1 block text-sm font-medium text-gray-700"
+              >
+                Business
+              </label>
+              <input
+                id="businessName"
+                type="text"
+                className={`w-full rounded-lg border bg-white px-3 py-2 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 ${
+                  errors.name
+                    ? "border-red-400"
+                    : "border-gray-300 focus:border-indigo-500"
+                }`}
+                value={businessName}
+                onChange={(e) => setBusinessName(e.target.value)}
               />
               {errors.name && (
                 <p className="mt-1 text-sm text-red-600">{errors.name}</p>
