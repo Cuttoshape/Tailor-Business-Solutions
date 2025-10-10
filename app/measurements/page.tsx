@@ -2,11 +2,17 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import type { Customer } from "@/components/CustomerLookup";
+import CustomerLookup from "@/components/CustomerLookup";
 
 export default function Measurements() {
   const [activeTab, setActiveTab] = useState("automatic");
   const [showAddForm, setShowAddForm] = useState(false);
   const [selectedGender, setSelectedGender] = useState("female");
+  const [showCustomerLookup, setShowCustomerLookup] = useState(false);
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(
+    null
+  );
 
   const femaleMeasurements = [
     { key: "neck", label: "Neck (round)", unit: "inches" },
@@ -114,6 +120,13 @@ export default function Measurements() {
       [key]: value,
     }));
   };
+
+  const handleCustomerSelect = (customer: any) => {
+    setSelectedCustomer(customer);
+    setShowCustomerLookup(false);
+  };
+
+  const handleSaveMeasurement = () => {};
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -293,7 +306,7 @@ export default function Measurements() {
                 onClick={() => setShowAddForm(true)}
                 className="w-full bg-gray-800 text-white py-3 rounded-lg font-medium"
               >
-                Add Manual Measurement
+                Add Manual Measurement---
               </button>
             </div>
           </div>
@@ -317,9 +330,38 @@ export default function Measurements() {
             </div>
 
             <form className="space-y-4">
+              {showCustomerLookup && (
+                <CustomerLookup
+                  open={showCustomerLookup}
+                  onClose={() => setShowCustomerLookup(false)}
+                  onSelect={handleCustomerSelect}
+                  initialQuery=""
+                  allowBackdropClose={true}
+                />
+              )}
+
+              <button
+                onClick={() => setShowCustomerLookup(true)}
+                className="flex-1 py-2 px-4 bg-indigo-50 text-indigo-600 rounded-lg font-medium text-sm flex items-center justify-center space-x-2"
+              >
+                <i className="ri-search-line"></i>
+                <span>Find Existing Customer</span>
+              </button>
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Customer Name
+                </label>
+                <input
+                  type="text"
+                  className="w-full p-3 border border-gray-200 rounded-lg text-sm"
+                  placeholder="Enter customer name"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Email
                 </label>
                 <input
                   type="text"
@@ -428,6 +470,7 @@ export default function Measurements() {
                   Cancel
                 </button>
                 <button
+                  onClick={handleSaveMeasurement}
                   type="submit"
                   className="flex-1 py-3 bg-indigo-600 text-white rounded-lg font-medium"
                 >

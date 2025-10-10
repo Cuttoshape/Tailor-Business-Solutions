@@ -36,7 +36,7 @@ export default function CustomerLookup({
   const [activeIndex, setActiveIndex] = useState<number>(-1);
 
   const [loading, setLoading] = useState(true);
-  const [customers, setCustomers] = useState([]);
+  const [customers, setCustomers] = useState<Customer[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
@@ -44,9 +44,7 @@ export default function CustomerLookup({
     const fetchData = async () => {
       try {
         setLoading(true);
-        console.log("========================KKKKKKK=========");
         const { customers } = await apiClient.customers.getMyCustomer();
-        console.log("======================", customers);
         setCustomers(customers);
       } catch (error) {
         console.error("Failed to fetch customer insights:", error);
@@ -86,7 +84,7 @@ export default function CustomerLookup({
   const filteredCustomers = useMemo(() => {
     if (!debouncedQuery) return customers;
     const q = debouncedQuery.toLowerCase();
-    return customers.filter((c) => {
+    return customers.filter((c: Customer) => {
       const name = c.name?.toLowerCase() ?? "";
       const phone = c.phone?.toLowerCase() ?? "";
       const email = c.email?.toLowerCase() ?? "";
@@ -196,7 +194,7 @@ export default function CustomerLookup({
         <div ref={listRef} className="overflow-y-auto max-h-[60vh] p-4">
           {filteredCustomers.length > 0 ? (
             <div className="space-y-3">
-              {filteredCustomers.map((customer, idx) => (
+              {filteredCustomers.map((customer: Customer, idx) => (
                 <button
                   key={customer.id}
                   data-index={idx}

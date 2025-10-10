@@ -1,17 +1,24 @@
+"use client";
+
 /* --------------------------------------------------------------------------------
  * CreateBanner Modal
  * -------------------------------------------------------------------------------*/
-
 import { useEffect, useMemo, useRef, useState } from "react";
-import { BannerData } from "./BusinessBanner";
 import apiClient from "@/lib/api";
+import type { BannerData } from "./BusinessBanner";
 
 type CreateBannerModalProps = {
+  businessId: string; // ← required for type safety
   onClose: () => void;
   onCreated: (banner: BannerData) => void;
 };
 
+type CreateBannerResponse =
+  | { banner: BannerData } // if your API wraps the object
+  | BannerData; // or returns the object directly
+
 export default function CreateBannerModal({
+  businessId,
   onClose,
   onCreated,
 }: CreateBannerModalProps) {
@@ -23,6 +30,7 @@ export default function CreateBannerModal({
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
+  // Clean up object URL
   useEffect(() => {
     return () => {
       if (previewUrl?.startsWith("blob:")) URL.revokeObjectURL(previewUrl);
@@ -30,7 +38,7 @@ export default function CreateBannerModal({
   }, [previewUrl]);
 
   const canSubmit = useMemo(() => {
-    return !!title.trim() && !!file && !submitting;
+    return title.trim().length > 0 && !!file && !submitting;
   }, [title, file, submitting]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -69,25 +77,49 @@ export default function CreateBannerModal({
     setSubmitting(true);
     setError(null);
     try {
+      // Primary source of truth: prop
+      let bizId = businessId;
+
+      // Optional fallback if you still want to support it
+      if (!bizId) {
+        const raw =
+          typeof window !== "undefined" ? localStorage.getItem("user") : null;
+        if (raw) {
+          const user = JSON.parse(raw) as { businessId?: string } | null;
+          if (user?.businessId) bizId = user.businessId;
+        }
+      }
+
+      if (!bizId) {
+        throw new Error("Business ID is required to create a banner.");
+      }
+
       const form = new FormData();
       form.append("title", title.trim());
       form.append("description", description.trim());
-      form.append("image", file);
+      form.append("businessId", bizId);
+      form.append("image", file); // File is acceptable as Blob
 
-      // apiClient.createBanner should accept FormData and return banner object
-      const created = await apiClient.createBanner(form);
+      // apiClient.banners.create should accept FormData
+      const created = (await apiClient.banners.create(
+        form
+      )) as CreateBannerResponse;
 
-      // Expecting: { id, title, description, imageUrl }
+      // Normalize to BannerData regardless of API shape
+      const normalized: BannerData =
+        "banner" in created ? created.banner : created;
+
       const result: BannerData = {
-        id: created?.id,
-        title: created?.title ?? title.trim(),
-        description: created?.description ?? description.trim(),
-        imageUrl: created?.imageUrl, // backend returns hosted URL
+        id: normalized?.id,
+        title: normalized?.title ?? title.trim(),
+        description: normalized?.description ?? description.trim(),
+        imageUrl: normalized?.imageUrl, // support both keys
       };
 
       onCreated(result);
-    } catch (e: any) {
-      setError(e?.message ?? "Failed to create banner.");
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Failed to create banner.";
+      setError(msg);
     } finally {
       setSubmitting(false);
     }
