@@ -4,9 +4,10 @@ import { useState } from "react";
 import Link from "next/link";
 import type { Customer } from "@/components/CustomerLookup";
 import CustomerLookup from "@/components/CustomerLookup";
+import apiClient from "@/lib/api";
 
 export default function Measurements() {
-  const [activeTab, setActiveTab] = useState("automatic");
+  const [activeTab, setActiveTab] = useState("manual");
   const [showAddForm, setShowAddForm] = useState(false);
   const [selectedGender, setSelectedGender] = useState("female");
   const [showCustomerLookup, setShowCustomerLookup] = useState(false);
@@ -126,7 +127,11 @@ export default function Measurements() {
     setShowCustomerLookup(false);
   };
 
-  const handleSaveMeasurement = () => {};
+  const handleSaveMeasurement = () => {
+    const data = {};
+    apiClient.customers.create(data);
+    setShowAddForm(false);
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -151,16 +156,6 @@ export default function Measurements() {
         <div className="px-4 py-4">
           <div className="bg-gray-100 rounded-full p-1 flex">
             <button
-              onClick={() => setActiveTab("automatic")}
-              className={`flex-1 py-2 px-4 rounded-full text-sm font-medium transition-all ${
-                activeTab === "automatic"
-                  ? "bg-white text-indigo-600 shadow-sm"
-                  : "text-gray-600"
-              }`}
-            >
-              Automatic
-            </button>
-            <button
               onClick={() => setActiveTab("manual")}
               className={`flex-1 py-2 px-4 rounded-full text-sm font-medium transition-all ${
                 activeTab === "manual"
@@ -170,6 +165,16 @@ export default function Measurements() {
             >
               Manual
             </button>
+            <button
+              onClick={() => setActiveTab("automatic")}
+              className={`flex-1 py-2 px-4 rounded-full text-sm font-medium transition-all ${
+                activeTab === "automatic"
+                  ? "bg-white text-indigo-600 shadow-sm"
+                  : "text-gray-600"
+              }`}
+            >
+              Automatic
+            </button>
           </div>
         </div>
 
@@ -178,11 +183,11 @@ export default function Measurements() {
           <div className="px-4 space-y-4">
             <div className="bg-white rounded-xl p-6 shadow-sm">
               <div className="text-center mb-6">
-                <img
+                {/* <img
                   src="https://readdy.ai/api/search-image?query=3D%20illustration%20of%20body%20measurement%20scanning%20technology%2C%20modern%20digital%20measuring%20system%2C%20clean%20white%20background%2C%20professional%20medical%20equipment%20style%2C%20high%20detail%20quality%2C%20centered%20composition&width=200&height=150&seq=auto1&orientation=landscape"
                   alt="Automatic Measurement"
                   className="w-full h-32 object-cover rounded-lg mb-4"
-                />
+                /> */}
                 <h3 className="font-semibold text-gray-800 mb-2">
                   Automatic Measurement
                 </h3>
@@ -313,6 +318,16 @@ export default function Measurements() {
         )}
       </div>
 
+      {showCustomerLookup && (
+        <CustomerLookup
+          open={showCustomerLookup}
+          onClose={() => setShowCustomerLookup(false)}
+          onSelect={handleCustomerSelect}
+          initialQuery=""
+          allowBackdropClose={true}
+        />
+      )}
+
       {/* Add Form Modal */}
       {showAddForm && (
         <div className="fixed mb-10 inset-0 bg-black/50 z-50 flex items-end">
@@ -330,16 +345,6 @@ export default function Measurements() {
             </div>
 
             <form className="space-y-4">
-              {showCustomerLookup && (
-                <CustomerLookup
-                  open={showCustomerLookup}
-                  onClose={() => setShowCustomerLookup(false)}
-                  onSelect={handleCustomerSelect}
-                  initialQuery=""
-                  allowBackdropClose={true}
-                />
-              )}
-
               <button
                 onClick={() => setShowCustomerLookup(true)}
                 className="flex-1 py-2 px-4 bg-indigo-50 text-indigo-600 rounded-lg font-medium text-sm flex items-center justify-center space-x-2"
