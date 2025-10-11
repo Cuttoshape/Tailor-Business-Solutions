@@ -6,6 +6,9 @@ export type Customer = {
   name: string;
   phone?: string;
   email?: string;
+  address?: string;
+  age?: number;
+  gender?: string;
   /** Optional short label to show in the circle (e.g. initials). If omitted, we'll derive initials from `name`. */
   avatar?: string;
 };
@@ -191,7 +194,7 @@ export default function CustomerLookup({
         </div>
 
         {/* Results */}
-        <div ref={listRef} className="overflow-y-auto max-h-[60vh] p-4">
+        <div ref={listRef} className="overflow-y-auto max-h-[60vh] p-4 mb-20">
           {filteredCustomers.length > 0 ? (
             <div className="space-y-3">
               {filteredCustomers.map((customer: Customer, idx) => (

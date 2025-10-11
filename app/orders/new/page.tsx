@@ -5,6 +5,9 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import CustomerLookup, { Customer } from "@/components/CustomerLookup";
+import ProductLookup from "@/components/ProductLookup";
+import { Product } from "@/app/inventory/page";
+import CustomerBioAddForm from "@/components/CustomerBioAddForm";
 
 export default function NewOrderPage() {
   const router = useRouter();
@@ -12,9 +15,12 @@ export default function NewOrderPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showCustomerLookup, setShowCustomerLookup] = useState(false);
   const [customerSearchQuery, setCustomerSearchQuery] = useState("");
-  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(
-    null
-  );
+  const [showProuctLookup, setShowProductLookup] = useState(false);
+  const [selectedCustomer, setSelectedCustomer] = useState<
+    Customer | undefined
+  >(undefined);
+
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
   const [formData, setFormData] = useState({
     customerName: "",
@@ -290,6 +296,11 @@ export default function NewOrderPage() {
     </div>
   );
 
+  const handleProductSelect = (product: Product) => {
+    setSelectedProduct(product);
+    setShowProductLookup(false);
+  };
+
   const renderStep1 = () => (
     <div className="space-y-6">
       <div className="text-center mb-6">
@@ -313,7 +324,7 @@ export default function NewOrderPage() {
 
         <button
           onClick={() => {
-            setSelectedCustomer(null);
+            setSelectedCustomer(undefined);
             setFormData((prev) => ({
               ...prev,
               customerName: "",
@@ -353,7 +364,7 @@ export default function NewOrderPage() {
             </div>
             <button
               onClick={() => {
-                setSelectedCustomer(null);
+                setSelectedCustomer(undefined);
                 setFormData((prev) => ({
                   ...prev,
                   customerName: "",
@@ -378,55 +389,11 @@ export default function NewOrderPage() {
       )}
 
       {!selectedCustomer?.id && (
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Customer Name *
-            </label>
-            <input
-              type="text"
-              value={formData.customerName}
-              onChange={(e) =>
-                handleInputChange("customerName", e.target.value)
-              }
-              className="w-full p-3 border border-gray-200 rounded-lg text-sm"
-              placeholder="Enter full name"
-              disabled={!!selectedCustomer}
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Phone Number *
-            </label>
-            <input
-              type="tel"
-              value={formData.customerPhone}
-              onChange={(e) =>
-                handleInputChange("customerPhone", e.target.value)
-              }
-              className="w-full p-3 border border-gray-200 rounded-lg text-sm"
-              placeholder="+234 xxx xxx xxxx"
-              disabled={!!selectedCustomer}
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Email Address
-            </label>
-            <input
-              type="email"
-              value={formData.customerEmail}
-              onChange={(e) =>
-                handleInputChange("customerEmail", e.target.value)
-              }
-              className="w-full p-3 border border-gray-200 rounded-lg text-sm"
-              placeholder="customer@email.com"
-              disabled={!!selectedCustomer}
-            />
-          </div>
-        </div>
+        <CustomerBioAddForm
+          customer={selectedCustomer}
+          formData={formData}
+          setFormData={setFormData}
+        />
       )}
     </div>
   );
@@ -531,49 +498,23 @@ export default function NewOrderPage() {
         </p>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
-        {itemTypes.map((item) => (
-          <button
-            key={item.id}
-            onClick={() => handleItemTypeSelect(item)}
-            className={`p-4 rounded-xl border-2 transition-all ${
-              formData.itemType === item.id
-                ? "border-indigo-600 bg-indigo-50"
-                : "border-gray-200 bg-white"
-            }`}
-          >
-            <div className="text-center">
-              <div
-                className={`w-12 h-12 mx-auto mb-2 rounded-full flex items-center justify-center ${
-                  formData.itemType === item.id
-                    ? "bg-indigo-100"
-                    : "bg-gray-100"
-                }`}
-              >
-                <i
-                  className={`${item.icon} text-lg ${
-                    formData.itemType === item.id
-                      ? "text-indigo-600"
-                      : "text-gray-600"
-                  }`}
-                ></i>
-              </div>
-              <p
-                className={`text-sm font-medium ${
-                  formData.itemType === item.id
-                    ? "text-indigo-900"
-                    : "text-gray-900"
-                }`}
-              >
-                {item.name}
-              </p>
-              {item.price > 0 && (
-                <p className="text-xs text-gray-500 mt-1">${item.price}</p>
-              )}
-            </div>
-          </button>
-        ))}
-      </div>
+      <button
+        onClick={() => setShowProductLookup(true)}
+        className="flex-1 py-2 px-4 bg-indigo-50 text-indigo-600 rounded-lg font-medium text-sm flex items-center justify-center space-x-2"
+      >
+        <i className="ri-search-line"></i>
+        <span>Find Existing Product</span>
+      </button>
+
+      {showProuctLookup && (
+        <ProductLookup
+          open={showProuctLookup}
+          onClose={() => setShowProductLookup(false)}
+          onSelect={handleProductSelect}
+          initialQuery=""
+          allowBackdropClose={true}
+        />
+      )}
 
       {formData.itemType === "custom" && (
         <div className="mt-4">
@@ -844,7 +785,7 @@ export default function NewOrderPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 pt-16 pb-20">
+    <div className="min-h-screen bg-gray-50 pb-20">
       {/* Header */}
       <div className="bg-white shadow-sm border-b px-4 py-4 fixed top-0 left-0 right-0 z-10">
         <div className="flex items-center justify-between">

@@ -1,5 +1,6 @@
 "use client";
 
+import CustomerBioAddForm from "@/components/CustomerBioAddForm";
 import CustomerLookup, { Customer } from "@/components/CustomerLookup";
 import { useState, useEffect } from "react";
 
@@ -15,14 +16,14 @@ export default function InvoiceGenerator({
   const [step, setStep] = useState(1);
   const [showCustomerLookup, setShowCustomerLookup] = useState(false);
   const [currency, setCurrency] = useState("NGN");
-  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(
-    null
-  );
+  const [selectedCustomer, setSelectedCustomer] = useState<
+    Customer | undefined
+  >(undefined);
   const [invoiceData, setInvoiceData] = useState({
-    customerName: "",
-    customerEmail: "",
-    customerPhone: "",
-    customerAddress: "",
+    name: "",
+    email: "",
+    phone: "",
+    address: "",
     items: [{ name: "", description: "", quantity: 1, price: 0 }],
     shippingCost: 0,
     profit: 0,
@@ -35,10 +36,10 @@ export default function InvoiceGenerator({
   useEffect(() => {
     if (existingInvoice) {
       setInvoiceData({
-        customerName: existingInvoice.customerName,
-        customerEmail: existingInvoice.customerEmail,
-        customerPhone: existingInvoice.customerPhone,
-        customerAddress: existingInvoice.customerAddress || "",
+        name: existingInvoice.customerName,
+        email: existingInvoice.customerEmail,
+        phone: existingInvoice.customerPhone,
+        address: existingInvoice.customerAddress || "",
         items: existingInvoice.items,
         shippingCost: 0,
         profit: 0,
@@ -104,7 +105,6 @@ export default function InvoiceGenerator({
 
   const handleCustomerSelect = (customer: any) => {
     setSelectedCustomer(customer);
-
     setShowCustomerLookup(false);
   };
 
@@ -120,7 +120,7 @@ export default function InvoiceGenerator({
 
   const sendViaEmail = () => {
     const subject = `Proforma Invoice - ${generateInvoiceNumber()}`;
-    const body = `Dear ${invoiceData.customerName},
+    const body = `Dear ${invoiceData.name},
 
 Please find attached your proforma invoice for the following items:
 
@@ -144,13 +144,13 @@ Best regards,
 Cuttoshape`;
 
     const mailtoLink = `mailto:${
-      invoiceData.customerEmail
+      invoiceData.email
     }?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     window.location.href = mailtoLink;
   };
 
   const sendViaWhatsApp = () => {
-    const message = `Hello ${invoiceData.customerName}! 
+    const message = `Hello ${invoiceData.name}! 
 
 Here's your proforma invoice:
 
@@ -260,76 +260,13 @@ Thank you for choosing Cuttoshape! 🪡✂️`;
               <span>Find Existing Customer</span>
             </button>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Customer Name *
-              </label>
-              <input
-                type="text"
-                value={invoiceData.customerName}
-                onChange={(e) =>
-                  setInvoiceData((prev) => ({
-                    ...prev,
-                    customerName: e.target.value,
-                  }))
-                }
-                className="w-full p-3 border border-gray-200 rounded-lg"
-                placeholder="Enter customer name"
+            {!selectedCustomer?.id && (
+              <CustomerBioAddForm
+                customer={selectedCustomer}
+                formData={invoiceData}
+                setFormData={setInvoiceData}
               />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Email Address *
-              </label>
-              <input
-                type="email"
-                value={invoiceData.customerEmail}
-                onChange={(e) =>
-                  setInvoiceData((prev) => ({
-                    ...prev,
-                    customerEmail: e.target.value,
-                  }))
-                }
-                className="w-full p-3 border border-gray-200 rounded-lg"
-                placeholder="customer@email.com"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Phone Number *
-              </label>
-              <input
-                type="tel"
-                value={invoiceData.customerPhone}
-                onChange={(e) =>
-                  setInvoiceData((prev) => ({
-                    ...prev,
-                    customerPhone: e.target.value,
-                  }))
-                }
-                className="w-full p-3 border border-gray-200 rounded-lg"
-                placeholder="+234 xxx xxx xxxx"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Delivery Address
-              </label>
-              <textarea
-                value={invoiceData.customerAddress}
-                onChange={(e) =>
-                  setInvoiceData((prev) => ({
-                    ...prev,
-                    customerAddress: e.target.value,
-                  }))
-                }
-                className="w-full p-3 border border-gray-200 rounded-lg h-20"
-                placeholder="Enter delivery address"
-              />
-            </div>
+            )}
 
             <div className="grid grid-cols-2 gap-3">
               <div>
@@ -369,9 +306,7 @@ Thank you for choosing Cuttoshape! 🪡✂️`;
             <button
               onClick={() => setStep(2)}
               disabled={
-                !invoiceData.customerName ||
-                !invoiceData.customerEmail ||
-                !invoiceData.customerPhone
+                !invoiceData.name || !invoiceData.email || !invoiceData.phone
               }
               className="w-full bg-indigo-600 text-white py-3 rounded-lg font-medium disabled:bg-gray-300"
             >
@@ -630,16 +565,12 @@ Thank you for choosing Cuttoshape! 🪡✂️`;
               <div className="grid grid-cols-2 gap-6 mb-6">
                 <div>
                   <h3 className="font-semibold text-gray-900 mb-2">Bill To:</h3>
-                  <p className="text-gray-700">{invoiceData.customerName}</p>
-                  <p className="text-gray-600 text-sm">
-                    {invoiceData.customerEmail}
-                  </p>
-                  <p className="text-gray-600 text-sm">
-                    {invoiceData.customerPhone}
-                  </p>
-                  {invoiceData.customerAddress && (
+                  <p className="text-gray-700">{invoiceData.name}</p>
+                  <p className="text-gray-600 text-sm">{invoiceData.email}</p>
+                  <p className="text-gray-600 text-sm">{invoiceData.phone}</p>
+                  {invoiceData.address && (
                     <p className="text-gray-600 text-sm mt-1">
-                      {invoiceData.customerAddress}
+                      {invoiceData.address}
                     </p>
                   )}
                 </div>

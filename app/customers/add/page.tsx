@@ -4,6 +4,7 @@ import { useState, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import apiClient from "@/lib/api";
+import CustomerBioAddForm from "@/components/CustomerBioAddForm";
 
 type FormData = {
   name: string;
@@ -12,6 +13,7 @@ type FormData = {
   address: string;
   status: "new" | "active" | "vip";
   notes: string;
+  gender: string;
 };
 
 const STEP_LABELS = ["Basic Info", "Address", "Preview"];
@@ -26,7 +28,10 @@ export default function AddCustomerPage() {
     address: "",
     status: "new",
     notes: "",
+    gender: "",
   });
+
+  console.log("------formData-------", formData);
 
   const [currentStep, setCurrentStep] = useState(1);
   const [showSuccess, setShowSuccess] = useState(false);
@@ -57,7 +62,10 @@ export default function AddCustomerPage() {
   const isStepValid = Object.keys(stepErrors).length === 0;
 
   const nextStep = () => {
-    if (currentStep < 3 && isStepValid) setCurrentStep((s) => s + 1);
+    if (currentStep < 3 && isStepValid) {
+      setStep((s) => s + 1);
+      setCurrentStep((s) => s + 1);
+    }
   };
   const prevStep = () => currentStep > 1 && setCurrentStep((s) => s - 1);
 
@@ -78,6 +86,8 @@ export default function AddCustomerPage() {
       setSubmitting(false);
     }
   };
+
+  const [step, setStep] = useState(1);
 
   return (
     <div className="min-h-screen bg-gray-50 pb-24">
@@ -100,37 +110,44 @@ export default function AddCustomerPage() {
           </div>
 
           {/* Progress Bar */}
-          <div className="mt-4">
-            <div className="flex items-center">
-              {[1, 2, 3].map((step, idx) => (
-                <div key={step} className="flex items-center flex-1">
-                  <div
-                    className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-medium transition-all ${
-                      step <= currentStep
-                        ? "bg-teal-500 text-white"
-                        : "bg-gray-200 text-gray-600"
-                    }`}
-                  >
-                    {step < currentStep ? (
-                      <i className="ri-check-line"></i>
-                    ) : (
-                      step
-                    )}
-                  </div>
-                  {step < 3 && (
-                    <div
-                      className={`flex-1 h-1 mx-2 rounded transition-all ${
-                        step < currentStep ? "bg-teal-500" : "bg-gray-200"
-                      }`}
-                    />
-                  )}
+
+          <div className="px-4 py-4 bg-gray-50">
+            {errorMsg && (
+              <div className="mb-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                <div className="flex items-start space-x-2">
+                  <i className="ri-error-warning-line mt-0.5"></i>
+                  <span>{errorMsg}</span>
                 </div>
-              ))}
+              </div>
+            )}
+            <div className="flex items-center justify-between mb-2">
+              <div
+                className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                  step >= 1
+                    ? "bg-indigo-600 text-white"
+                    : "bg-gray-200 text-gray-500"
+                }`}
+              >
+                1
+              </div>
+              <div
+                className={`flex-1 h-1 mx-2 ${
+                  step >= 2 ? "bg-indigo-600" : "bg-gray-200"
+                }`}
+              ></div>
+              <div
+                className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                  step >= 2
+                    ? "bg-indigo-600 text-white"
+                    : "bg-gray-200 text-gray-500"
+                }`}
+              >
+                2
+              </div>
             </div>
-            <div className="flex justify-between mt-2 text-xs text-gray-500">
-              {STEP_LABELS.map((lbl) => (
-                <span key={lbl}>{lbl}</span>
-              ))}
+            <div className="flex justify-between text-xs text-gray-500">
+              <span>Basic Info</span>
+              <span>Preview</span>
             </div>
           </div>
         </div>
@@ -138,196 +155,77 @@ export default function AddCustomerPage() {
 
       {/* Content */}
       <div className="pt-32 px-4 max-w-3xl mx-auto">
-        {/* Global error */}
-        {errorMsg && (
-          <div className="mb-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-            <div className="flex items-start space-x-2">
-              <i className="ri-error-warning-line mt-0.5"></i>
-              <span>{errorMsg}</span>
-            </div>
-          </div>
-        )}
-
         {/* Step 1: Basic Information */}
-        {currentStep === 1 && (
-          <div className="space-y-6">
-            <SectionHeader
-              icon="ri-user-add-line"
-              iconBg="bg-teal-100"
-              iconColor="text-teal-600"
-              title="Customer Information"
-              subtitle="Enter basic customer details"
-            />
-
-            <div className="space-y-4">
-              <Field
-                label="Full Name *"
-                error={stepErrors.name}
-                input={
-                  <input
-                    type="text"
-                    value={formData.name}
-                    onChange={(e) => handleInputChange("name", e.target.value)}
-                    className="w-full p-4 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
-                    placeholder="Enter customer's full name"
-                  />
-                }
-              />
-
-              <Field
-                label="Email Address *"
-                error={stepErrors.email}
-                input={
-                  <input
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => handleInputChange("email", e.target.value)}
-                    className="w-full p-4 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
-                    placeholder="customer@email.com"
-                  />
-                }
-              />
-
-              <Field
-                label="Phone Number *"
-                error={stepErrors.phone}
-                input={
-                  <input
-                    type="tel"
-                    value={formData.phone}
-                    onChange={(e) => handleInputChange("phone", e.target.value)}
-                    className="w-full p-4 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
-                    placeholder="+234 xxx xxx xxxx"
-                  />
-                }
-              />
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Customer Status
-                </label>
-                <div className="grid grid-cols-3 gap-2">
-                  {[
-                    {
-                      value: "new",
-                      label: "New",
-                      color: "bg-blue-100 text-blue-700",
-                      dot: "bg-blue-500",
-                    },
-                    {
-                      value: "active",
-                      label: "Active",
-                      color: "bg-green-100 text-green-700",
-                      dot: "bg-green-500",
-                    },
-                    {
-                      value: "vip",
-                      label: "VIP",
-                      color: "bg-purple-100 text-purple-700",
-                      dot: "bg-purple-500",
-                    },
-                  ].map((status) => {
-                    const active =
-                      formData.status === (status.value as FormData["status"]);
-                    return (
-                      <button
-                        key={status.value}
-                        type="button"
-                        onClick={() =>
-                          handleInputChange("status", status.value)
-                        }
-                        className={`p-3 rounded-xl text-sm font-medium transition-all flex items-center justify-between ${
-                          active
-                            ? `${status.color} ring-2 ring-offset-2 ring-teal-500`
-                            : "bg-gray-100 text-gray-600"
+        {step === 1 && (
+          <div className="space-y-4 pt-6">
+            <CustomerBioAddForm formData={formData} setFormData={setFormData} />
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Customer Status
+              </label>
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  {
+                    value: "new",
+                    label: "New",
+                    color: "bg-blue-100 text-blue-700",
+                    dot: "bg-blue-500",
+                  },
+                  {
+                    value: "active",
+                    label: "Active",
+                    color: "bg-green-100 text-green-700",
+                    dot: "bg-green-500",
+                  },
+                  {
+                    value: "vip",
+                    label: "VIP",
+                    color: "bg-purple-100 text-purple-700",
+                    dot: "bg-purple-500",
+                  },
+                ].map((status) => {
+                  const active =
+                    formData.status === (status.value as FormData["status"]);
+                  return (
+                    <button
+                      key={status.value}
+                      type="button"
+                      onClick={() => handleInputChange("status", status.value)}
+                      className={`p-3 rounded-xl text-sm font-medium transition-all flex items-center justify-between ${
+                        active
+                          ? `${status.color} ring-2 ring-offset-2 ring-teal-500`
+                          : "bg-gray-100 text-gray-600"
+                      }`}
+                      aria-pressed={active}
+                    >
+                      <span>{status.label}</span>
+                      <span
+                        className={`w-2 h-2 rounded-full ${
+                          active ? status.dot : "bg-gray-400"
                         }`}
-                        aria-pressed={active}
-                      >
-                        <span>{status.label}</span>
-                        <span
-                          className={`w-2 h-2 rounded-full ${
-                            active ? status.dot : "bg-gray-400"
-                          }`}
-                        />
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Notes (optional)
-                </label>
-                <textarea
-                  value={formData.notes}
-                  onChange={(e) => handleInputChange("notes", e.target.value)}
-                  className="w-full p-4 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 h-24"
-                  placeholder="Any extra details about this customer…"
-                />
+                      />
+                    </button>
+                  );
+                })}
               </div>
             </div>
-          </div>
-        )}
 
-        {/* Step 2: Address Information */}
-        {currentStep === 2 && (
-          <div className="space-y-6">
-            <SectionHeader
-              icon="ri-map-pin-line"
-              iconBg="bg-purple-100"
-              iconColor="text-purple-600"
-              title="Address Information"
-              subtitle="Where can we reach the customer?"
-            />
-
-            <div className="space-y-4">
-              <Field
-                label="Full Address *"
-                error={stepErrors.address}
-                input={
-                  <textarea
-                    value={formData.address}
-                    onChange={(e) =>
-                      handleInputChange("address", e.target.value)
-                    }
-                    className="w-full p-4 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 h-28"
-                    placeholder="Enter street, area, city, state (e.g., 12 Ade Road, Ikeja, Lagos)"
-                  />
-                }
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Notes (optional)
+              </label>
+              <textarea
+                value={formData.notes}
+                onChange={(e) => handleInputChange("notes", e.target.value)}
+                className="w-full p-4 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 h-24"
+                placeholder="Any extra details about this customer…"
               />
-
-              <div className="bg-blue-50 rounded-xl p-4">
-                <div className="flex items-start space-x-3">
-                  <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
-                    <i className="ri-information-line text-blue-600 text-sm"></i>
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-medium text-blue-900 mb-1">
-                      Address Tips
-                    </h4>
-                    <p className="text-xs text-blue-700">
-                      Include landmarks, street numbers, and area names to make
-                      delivery and visits easier.
-                    </p>
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
         )}
 
-        {/* Step 3: Preview (no measurements) */}
-        {currentStep === 3 && (
-          <div className="space-y-6">
-            <SectionHeader
-              icon="ri-eye-line"
-              iconBg="bg-orange-100"
-              iconColor="text-orange-600"
-              title="Preview & Submit"
-              subtitle="Review the details below. If everything looks good, click Add Customer."
-            />
-
+        {step === 2 && (
+          <div className="space-y-6 pt-6">
             <div className="grid sm:grid-cols-2 gap-4">
               <PreviewCard label="Full Name" value={formData.name} />
               <PreviewCard label="Email" value={formData.email} />
@@ -374,7 +272,7 @@ export default function AddCustomerPage() {
             </button>
           )}
 
-          {currentStep < 3 ? (
+          {currentStep < 2 ? (
             <button
               type="button"
               onClick={nextStep}
