@@ -245,6 +245,10 @@ class APIClient {
       const query = params ? `?${new URLSearchParams(params)}` : "";
       return this.get(`/invoices${query}`);
     },
+    getBusinessInvoices: (params?: Record<string, string>) => {
+      const query = params ? `?${new URLSearchParams(params)}` : "";
+      return this.get(`/invoices/business${query}`);
+    },
     getOne: (id: string) => this.get(`/invoices/${id}`),
     create: (data: unknown) => this.post("/invoices", data),
     update: (id: string, data: unknown) => this.put(`/invoices/${id}`, data),

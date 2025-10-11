@@ -1,8 +1,13 @@
 "use client";
 
+import BusinessBanner from "@/components/BusinessBanner";
 import CustomerBioAddForm from "@/components/CustomerBioAddForm";
 import CustomerLookup, { Customer } from "@/components/CustomerLookup";
 import { useState, useEffect } from "react";
+import { useBusinessId } from "../hooks/useBusinessId";
+import ProductLookup from "@/components/ProductLookup";
+import { Product } from "../inventory/page";
+import apiClient from "@/lib/api";
 
 interface InvoiceGeneratorProps {
   onClose: () => void;
@@ -13,9 +18,12 @@ export default function InvoiceGenerator({
   onClose,
   existingInvoice,
 }: InvoiceGeneratorProps) {
+  const buinseesId = useBusinessId();
   const [step, setStep] = useState(1);
   const [showCustomerLookup, setShowCustomerLookup] = useState(false);
   const [currency, setCurrency] = useState("NGN");
+  const [showProuctLookup, setShowProductLookup] = useState(false);
+  const [currentIndex, setCurrentIndex] = useState<number | null>(null);
   const [selectedCustomer, setSelectedCustomer] = useState<
     Customer | undefined
   >(undefined);
@@ -32,6 +40,8 @@ export default function InvoiceGenerator({
     issueDate: new Date().toISOString().split("T")[0],
     expiryDate: "",
   });
+
+  console.log("----invoiceData---------", invoiceData);
 
   useEffect(() => {
     if (existingInvoice) {
@@ -104,7 +114,7 @@ export default function InvoiceGenerator({
   };
 
   const handleCustomerSelect = (customer: any) => {
-    setSelectedCustomer(customer);
+    setInvoiceData((prev) => ({ ...prev, ...customer }));
     setShowCustomerLookup(false);
   };
 
@@ -176,6 +186,27 @@ Thank you for choosing Cuttoshape! 🪡✂️`;
       ""
     )}?text=${encodeURIComponent(message)}`;
     window.open(whatsappLink, "_blank");
+  };
+
+  const handleProductSelect = (product: Product) => {
+    if (currentIndex === null) return;
+    const { name, description } = product;
+
+    setInvoiceData((prev) => ({
+      ...prev,
+      items: prev.items.map((item, i) =>
+        i === currentIndex
+          ? { ...item, name, description: description || "" }
+          : item
+      ),
+    }));
+
+    setShowProductLookup(false);
+  };
+
+  const handleSaveInvoice = () => {
+    apiClient.invoices.create({ ...invoiceData, buinseesId, status: "Draft" });
+    onClose();
   };
 
   return (
@@ -268,6 +299,52 @@ Thank you for choosing Cuttoshape! 🪡✂️`;
               />
             )}
 
+            {selectedCustomer && (
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                    <span className="text-sm font-medium text-green-600">
+                      {selectedCustomer.name
+                        ? selectedCustomer.name.charAt(0) +
+                          selectedCustomer.name.charAt(1)
+                        : ""}
+                    </span>
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-medium text-green-900">
+                      {selectedCustomer.name}
+                    </p>
+                    <p className="text-sm text-green-600">
+                      {selectedCustomer.phone}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setSelectedCustomer(undefined);
+                      setInvoiceData((prev) => ({
+                        name: "",
+                        email: "",
+                        phone: "",
+                        address: "",
+                        items: [
+                          { name: "", description: "", quantity: 1, price: 0 },
+                        ],
+                        shippingCost: 0,
+                        profit: 0,
+                        estimatedDelivery: "",
+                        notes: "",
+                        issueDate: new Date().toISOString().split("T")[0],
+                        expiryDate: "",
+                      }));
+                    }}
+                    className="w-6 h-6 flex items-center justify-center"
+                  >
+                    <i className="ri-close-line text-green-600"></i>
+                  </button>
+                </div>
+              </div>
+            )}
+
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -354,9 +431,22 @@ Thank you for choosing Cuttoshape! 🪡✂️`;
                   className="border border-gray-200 rounded-lg p-4"
                 >
                   <div className="flex items-center justify-between mb-3">
-                    <h4 className="font-medium text-gray-800">
-                      Item {index + 1}
-                    </h4>
+                    <div className="flex justify-between items-center w-full">
+                      <h4 className="font-medium text-gray-800">
+                        Item {index + 1}
+                      </h4>
+                      <button
+                        onClick={() => {
+                          setCurrentIndex(index);
+                          setShowProductLookup(true);
+                        }}
+                        className="py-2 px-4 bg-indigo-50 text-indigo-600 rounded-lg font-medium text-sm flex items-center justify-center space-x-2"
+                      >
+                        <i className="ri-search-line"></i>
+                        <span>Find Existing Product</span>
+                      </button>
+                    </div>
+
                     {invoiceData.items.length > 1 && (
                       <button
                         onClick={() => removeItem(index)}
@@ -550,12 +640,13 @@ Thank you for choosing Cuttoshape! 🪡✂️`;
               Invoice Preview
             </h2>
 
+            <div className="mb-2">
+              <BusinessBanner businessId={buinseesId} />
+            </div>
+
             {/* Invoice Preview */}
             <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
               <div className="text-center mb-6">
-                <h1 className="font-['Pacifico'] text-2xl text-indigo-600 mb-2">
-                  Cuttoshape
-                </h1>
                 <h2 className="text-xl font-bold text-gray-900">
                   PROFORMA INVOICE
                 </h2>
@@ -696,27 +787,34 @@ Thank you for choosing Cuttoshape! 🪡✂️`;
 
             {/* Action Buttons */}
             <div className="space-y-3">
+              <button
+                onClick={handleSaveInvoice}
+                className="w-full bg-gray-800 text-white py-3 rounded-lg font-medium flex items-center justify-center space-x-2"
+              >
+                <i className="ri-save-3-line"></i>
+                <span>Save</span>
+              </button>
               <div className="flex space-x-3">
                 <button
                   onClick={sendViaEmail}
                   className="flex-1 bg-blue-600 text-white py-3 rounded-lg font-medium flex items-center justify-center space-x-2"
                 >
                   <i className="ri-mail-line"></i>
-                  <span>Send via Email</span>
+                  <span>Email</span>
                 </button>
                 <button
                   onClick={sendViaWhatsApp}
                   className="flex-1 bg-green-600 text-white py-3 rounded-lg font-medium flex items-center justify-center space-x-2"
                 >
                   <i className="ri-whatsapp-line"></i>
-                  <span>Send via WhatsApp</span>
+                  <span>WhatsApp</span>
                 </button>
               </div>
 
-              <button className="w-full bg-gray-800 text-white py-3 rounded-lg font-medium flex items-center justify-center space-x-2">
+              {/* <button className="w-full bg-gray-800 text-white py-3 rounded-lg font-medium flex items-center justify-center space-x-2">
                 <i className="ri-download-line"></i>
                 <span>Download PDF</span>
-              </button>
+              </button> */}
 
               <button
                 onClick={() => setStep(2)}
@@ -734,6 +832,16 @@ Thank you for choosing Cuttoshape! 🪡✂️`;
           open={showCustomerLookup}
           onClose={() => setShowCustomerLookup(false)}
           onSelect={handleCustomerSelect}
+          initialQuery=""
+          allowBackdropClose={true}
+        />
+      )}
+
+      {showProuctLookup && (
+        <ProductLookup
+          open={showProuctLookup}
+          onClose={() => setShowProductLookup(false)}
+          onSelect={handleProductSelect}
           initialQuery=""
           allowBackdropClose={true}
         />

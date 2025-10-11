@@ -128,9 +128,9 @@ export default function CustomerDetail({
       setOrdersLoading(true);
       setOrdersError(null);
       try {
-        const res = await apiClient.orders.getCustomerOrders(customer.id);
+        const res: any = await apiClient.orders.getCustomerOrders(customer.id);
         if (!mounted) return;
-        setRecentOrders(res ?? []);
+        setRecentOrders(res?.orders);
       } catch (e) {
         if (!mounted) return;
         setOrdersError("Failed to load orders.");
@@ -148,9 +148,9 @@ export default function CustomerDetail({
       setMeasLoading(true);
       setMeasError(null);
       try {
-        const res = await apiClient.measurements.getCustomerMeasurements(
-          customer.id
-        );
+        const res: any = await apiClient.measurements.getCustomerMeasurements({
+          customerId: customer.id,
+        });
         if (!mounted) return;
         setMeasurements(res?.values ?? {});
         setMeasUpdatedAt(res?.updatedAt);

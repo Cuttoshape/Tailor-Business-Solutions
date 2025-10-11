@@ -353,7 +353,10 @@ export default function NewOrderPage() {
           <div className="flex items-center space-x-3">
             <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
               <span className="text-sm font-medium text-green-600">
-                {selectedCustomer.avatar}
+                {selectedCustomer.name
+                  ? selectedCustomer.name.charAt(0) +
+                    selectedCustomer.name.charAt(1)
+                  : ""}
               </span>
             </div>
             <div className="flex-1">

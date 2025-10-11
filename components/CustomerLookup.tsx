@@ -46,13 +46,15 @@ export default function CustomerLookup({
   const listRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    if (!businessId) return;
+
     const fetchData = async () => {
       try {
         setLoading(true);
         const result: any = await apiClient.customers.getMyCustomer({
           businessId,
         });
-        setCustomers(result.customers);
+        setCustomers(result.customers || []);
       } catch (error) {
         console.error("Failed to fetch customer insights:", error);
       } finally {
@@ -68,6 +70,11 @@ export default function CustomerLookup({
     const t = setTimeout(() => setDebouncedQuery(query.trim()), 150);
     return () => clearTimeout(t);
   }, [query]);
+
+  // Reset active index when query changes
+  useEffect(() => {
+    setActiveIndex(-1);
+  }, [debouncedQuery]);
 
   // Reset state when modal opens
   useEffect(() => {
@@ -88,6 +95,19 @@ export default function CustomerLookup({
     return () => window.removeEventListener("keydown", handleKey);
   }, [open, onClose]);
 
+  const filteredCustomers = useMemo(() => {
+    if (!debouncedQuery.trim()) return customers;
+
+    const lowerQuery = debouncedQuery.toLowerCase();
+    return customers.filter((customer) => {
+      return (
+        customer.name.toLowerCase().includes(lowerQuery) ||
+        (customer.phone?.includes(debouncedQuery) ?? false) ||
+        (customer.email?.toLowerCase().includes(lowerQuery) ?? false)
+      );
+    });
+  }, [customers, debouncedQuery]);
+
   const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!allowBackdropClose) return;
     if (e.target === e.currentTarget) onClose();
@@ -102,9 +122,10 @@ export default function CustomerLookup({
       .join("") || "?";
 
   const moveActive = (dir: 1 | -1) => {
-    if (!customers.length) return;
+    if (!filteredCustomers.length) return;
     setActiveIndex((prev) => {
-      const next = (prev + dir + customers.length) % customers.length;
+      const next =
+        (prev + dir + filteredCustomers.length) % filteredCustomers.length;
       // Ensure the active item is visible
       const container = listRef.current;
       const item = container?.querySelector<HTMLButtonElement>(
@@ -124,7 +145,7 @@ export default function CustomerLookup({
   };
 
   const handleKeyDown: React.KeyboardEventHandler<HTMLInputElement> = (e) => {
-    if (!customers.length) return;
+    if (!filteredCustomers.length) return;
     if (e.key === "ArrowDown") {
       e.preventDefault();
       moveActive(1);
@@ -132,8 +153,8 @@ export default function CustomerLookup({
       e.preventDefault();
       moveActive(-1);
     } else if (e.key === "Enter") {
-      if (activeIndex >= 0 && activeIndex < customers.length) {
-        onSelect(customers[activeIndex]);
+      if (activeIndex >= 0 && activeIndex < filteredCustomers.length) {
+        onSelect(filteredCustomers[activeIndex]);
       }
     }
   };
@@ -187,9 +208,14 @@ export default function CustomerLookup({
 
         {/* Results */}
         <div ref={listRef} className="overflow-y-auto max-h-[60vh] p-4 mb-20">
-          {customers.length > 0 ? (
+          {loading ? (
+            <div className="text-center py-12">
+              <i className="ri-loader-4-line text-2xl text-gray-400 animate-spin"></i>
+              <p className="mt-2 text-gray-500">Loading customers...</p>
+            </div>
+          ) : filteredCustomers.length > 0 ? (
             <div className="space-y-3">
-              {customers.map((customer: Customer, idx) => (
+              {filteredCustomers.map((customer: Customer, idx) => (
                 <button
                   key={customer.id}
                   data-index={idx}
@@ -235,10 +261,14 @@ export default function CustomerLookup({
                 <i className="ri-user-search-line text-2xl text-gray-400"></i>
               </div>
               <h3 className="text-lg font-medium text-gray-900 mb-2">
-                No customers found
+                {debouncedQuery.trim()
+                  ? "No matching customers"
+                  : "No customers found"}
               </h3>
               <p id={describedById} className="text-gray-500 text-sm">
-                Try a different search term
+                {debouncedQuery.trim()
+                  ? "Try a different search term"
+                  : "Add your first customer to get started"}
               </p>
             </div>
           )}

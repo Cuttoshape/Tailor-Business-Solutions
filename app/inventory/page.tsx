@@ -8,6 +8,7 @@ import ProductDetailsModal from "./ProductDetailsModal";
 import SearchAndFilters from "./SearchAndFilters";
 import MaterialsList from "./MaterialsList";
 import { useParams } from "next/navigation";
+import { useBusinessId } from "../hooks/useBusinessId";
 
 // Define types
 export type FabricType = { name: string; cost: number };
@@ -64,7 +65,7 @@ export interface NewProduct {
 }
 
 export default function TailorInventory() {
-  const [businessId, setBusinessId] = useState("");
+  const [buinseesId, setBuinseesId] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [showAddProductModal, setShowAddProductModal] = useState(false);
   const [showEditProductModal, setShowEditProductModal] = useState(false);
@@ -76,25 +77,23 @@ export default function TailorInventory() {
   const [products, setProducts] = useState<Product[]>([]);
   const { bussId } = useParams();
 
-  const raw =
-    typeof window !== "undefined" ? localStorage.getItem("user") : null;
-  const user = raw ? (JSON.parse(raw) as { businessId?: string }) : null;
+  const buzzId = useBusinessId();
 
   useEffect(() => {
     if (bussId) {
-      if (typeof bussId === "string") setBusinessId(bussId);
+      if (typeof bussId === "string") setBuinseesId(bussId);
     } else {
-      if (user?.businessId) {
-        setBusinessId(user.businessId);
+      if (buzzId) {
+        setBuinseesId(buzzId);
       }
     }
-  }, [bussId]);
+  }, [bussId, buzzId]);
 
   const fetchProducts = async () => {
     try {
       setLoading(true);
       const result: any = await apiClient.products.getMyAll({
-        businessId: businessId,
+        businessId: buinseesId,
         search: searchQuery,
         page: page.toString(),
         limit: "20",
@@ -110,8 +109,8 @@ export default function TailorInventory() {
   };
 
   useEffect(() => {
-    if (businessId) fetchProducts();
-  }, [searchQuery, page, businessId]);
+    if (buinseesId) fetchProducts();
+  }, [searchQuery, page, buinseesId]);
 
   const handleViewDetails = (item: Product) => {
     setShowDetailsModal(true);
@@ -144,8 +143,8 @@ export default function TailorInventory() {
         {/* Business Banner */}
         <div className="px-4 mb-6">
           <div className="grid grid-cols-1 gap-4">
-            <div className="bg-white rounded-xl p-2">
-              <BusinessBanner businessId={businessId} />
+            <div className="bg-white rounded">
+              <BusinessBanner businessId={buinseesId} />
             </div>
           </div>
         </div>

@@ -11,14 +11,11 @@ export default function BannerCard({ banner }: { banner: Banner }) {
   const initial = (banner.title ?? "B").slice(0, 1).toUpperCase();
 
   return (
-    <div className="relative rounded-3xl">
-      {/* Soft gradient ring */}
-      <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-indigo-500/25 via-fuchsia-400/20 to-amber-400/25 blur-[18px] opacity-60 pointer-events-none" />
-
+    <div className="relative rounded">
       <div
-        className="relative w-full overflow-hidden rounded-3xl ring-1 ring-black/5 shadow-xl"
+        className="relative w-full overflow-hidden rounded-2xl ring-1 ring-black/5 shadow-xl"
         style={{
-          minHeight: 200,
+          minHeight: 150,
           backgroundImage: banner.imageUrl
             ? `url(${banner.imageUrl})`
             : undefined,
@@ -38,7 +35,7 @@ export default function BannerCard({ banner }: { banner: Banner }) {
         )}
 
         {/* Content */}
-        <div className="relative p-6 sm:p-8">
+        <div className="relative p-2 sm:p-8">
           <div className="flex items-start sm:items-center gap-4 sm:gap-5">
             {/* Monogram / emblem */}
             <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-white/15 backdrop-blur-md flex items-center justify-center ring-1 ring-white/30">
@@ -74,23 +71,7 @@ export default function BannerCard({ banner }: { banner: Banner }) {
               )}
             </div>
           </div>
-
-          {/* Bottom badges row (optional aesthetic detail) */}
-          {/* <div className="mt-5 flex flex-wrap gap-2">
-            <span className="text-[11px] uppercase tracking-wider bg-white/10 text-white/90 px-2.5 py-1 rounded-full ring-1 ring-white/20">
-              Bespoke
-            </span>
-            <span className="text-[11px] uppercase tracking-wider bg-white/10 text-white/90 px-2.5 py-1 rounded-full ring-1 ring-white/20">
-              Tailor-made
-            </span>
-            <span className="text-[11px] uppercase tracking-wider bg-white/10 text-white/90 px-2.5 py-1 rounded-full ring-1 ring-white/20">
-              Since 1998
-            </span>
-          </div> */}
         </div>
-
-        {/* Corner shine */}
-        <div className="pointer-events-none absolute -top-10 -right-10 w-40 h-40 bg-white/10 blur-2xl rounded-full" />
       </div>
     </div>
   );

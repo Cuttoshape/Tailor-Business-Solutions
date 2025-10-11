@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import React, { useMemo } from "react";
+import { Measurement } from "./new/page";
 
 type Gender = "male" | "female";
 
@@ -11,21 +12,8 @@ type MeasurementField = {
   unit: "inches" | string;
 };
 
-interface Customer {
-  id?: string;
-  name: string;
-  email: string;
-  gender: Gender;
-  age?: number;
-  address?: string;
-  phone?: string;
-}
-
 interface MeasurementDetailProps {
-  measurement: {
-    customer: Customer;
-    measurements: Record<string, string>;
-  };
+  measurement: Measurement;
   setShowDetail: (val: boolean) => void;
 }
 
@@ -134,18 +122,18 @@ export default function MeasurementDetail({
   ];
 
   const activeMeasurements =
-    customer.gender === "female" ? femaleMeasurements : maleMeasurements;
+    customer?.gender === "female" ? femaleMeasurements : maleMeasurements;
 
   return (
     <div className="fixed inset-0 bg-white z-50 overflow-y-auto mb-20">
       <div className="sticky top-0 bg-white border-b border-gray-200 px-4 py-3">
         <div className="flex items-center justify-between">
-          <Link
-            href="/measurements"
+          <button
+            onClick={() => setShowDetail(false)}
             className="w-8 h-8 flex items-center justify-center"
           >
             <i className="ri-arrow-left-line text-gray-600 text-lg"></i>
-          </Link>
+          </button>
           <h1 className="font-semibold text-gray-800">
             Customer Measurement Details
           </h1>
@@ -158,26 +146,26 @@ export default function MeasurementDetail({
             <h4 className="font-medium text-gray-800 mb-3">Customer Info</h4>
             <div className="space-y-2 text-sm">
               <p>
-                <span className="font-medium">Name:</span> {customer.name}
+                <span className="font-medium">Name:</span> {customer?.name}
               </p>
               <p>
                 <span className="font-medium">Email:</span>{" "}
-                {customer.email || "N/A"}
+                {customer?.email || "N/A"}
               </p>
               <p>
-                <span className="font-medium">Gender:</span> {customer.gender}
+                <span className="font-medium">Gender:</span> {customer?.gender}
               </p>
               <p>
                 <span className="font-medium">Age:</span>{" "}
-                {customer.age || "N/A"}
+                {customer?.age || "N/A"}
               </p>
               <p>
                 <span className="font-medium">Phone:</span>{" "}
-                {customer.phone || "N/A"}
+                {customer?.phone || "N/A"}
               </p>
               <p>
                 <span className="font-medium">Address:</span>{" "}
-                {customer.address || "N/A"}
+                {customer?.address || "N/A"}
               </p>
             </div>
           </div>
@@ -186,7 +174,7 @@ export default function MeasurementDetail({
           <div>
             <h4 className="font-medium text-gray-800 mb-3">
               Body Measurements{" "}
-              {customer.gender === "female" ? "(Female)" : "(Male)"}
+              {customer?.gender === "female" ? "(Female)" : "(Male)"}
             </h4>
             <div className="space-y-3">
               {activeMeasurements.map((m) => (

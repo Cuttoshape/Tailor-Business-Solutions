@@ -22,6 +22,21 @@ interface CustomerForm {
   age?: number | "";
   address?: string;
   phone?: string;
+  tailorId?: string;
+  id?: string;
+  businessId?: string;
+}
+
+export interface Measurement {
+  id: string;
+  customerId: string;
+  businessId: string;
+  measurements: Record<string, string>; // key-value pairs of measurements
+  createdAt: string; // ISO timestamp
+  updatedAt: string; // ISO timestamp
+  customer?: Customer; // Optional customer details
+  notes?: string;
+  method?: string; // e.g., "manual", "3D scan"
 }
 
 export default function MeasurementForm({

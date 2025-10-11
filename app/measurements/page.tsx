@@ -4,13 +4,15 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import apiClient from "@/lib/api";
 import MeasurementDetail from "./MeasurementDetailModal";
+import { Measurement } from "./new/page";
 
 export default function Measurements() {
   const [activeTab, setActiveTab] = useState("manual");
   const [loading, setLoading] = useState(true);
-  const [measurements, setMeasurements] = useState([]);
+  const [measurements, setMeasurements] = useState<Measurement[]>([]);
   const [showDetail, setShowDetail] = useState(false);
-  const [selectedMeasurement, setSelectedMeasurement] = useState<any>(null);
+  const [selectedMeasurement, setSelectedMeasurement] =
+    useState<Measurement | null>(null);
   const [businessId, setBusinessId] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [page, setPage] = useState(1);

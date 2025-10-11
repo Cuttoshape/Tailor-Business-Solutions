@@ -1,110 +1,72 @@
+"use client";
 
-'use client';
-
-import { useState } from 'react';
-import InvoiceGenerator from './InvoiceGenerator';
-
-const invoicesData = [
-  {
-    id: 'INV-2024-001',
-    customer: 'Adunni Adebayo',
-    email: 'adunni@email.com',
-    amount: 85000,
-    currency: 'NGN',
-    status: 'Paid',
-    date: '2024-02-15',
-    dueDate: '2024-03-01',
-    items: [
-      { name: 'Wedding Dress', quantity: 1, price: 75000 },
-      { name: 'Veil', quantity: 1, price: 10000 }
-    ]
-  },
-  {
-    id: 'INV-2024-002',
-    customer: 'Chika Okonkwo',
-    email: 'chika@email.com',
-    amount: 45000,
-    currency: 'NGN',
-    status: 'Sent',
-    date: '2024-02-14',
-    dueDate: '2024-02-28',
-    items: [
-      { name: 'Business Suit', quantity: 1, price: 45000 }
-    ]
-  },
-  {
-    id: 'INV-2024-003',
-    customer: 'Fatima Ibrahim',
-    email: 'fatima@email.com',
-    amount: 65000,
-    currency: 'NGN',
-    status: 'Draft',
-    date: '2024-02-13',
-    dueDate: '2024-02-27',
-    items: [
-      { name: 'Evening Gown', quantity: 1, price: 55000 },
-      { name: 'Clutch Bag', quantity: 1, price: 10000 }
-    ]
-  },
-  {
-    id: 'INV-2024-004',
-    customer: 'Emeka Nwankwo',
-    email: 'emeka@email.com',
-    amount: 25000,
-    currency: 'NGN',
-    status: 'Paid',
-    date: '2024-02-12',
-    dueDate: '2024-02-26',
-    items: [
-      { name: 'Casual Shirt', quantity: 2, price: 12500 }
-    ]
-  }
-];
+import { useEffect, useState } from "react";
+import InvoiceGenerator from "./InvoiceGenerator";
+import apiClient from "@/lib/api";
+import { useBusinessId } from "../hooks/useBusinessId";
 
 export default function Invoices() {
-  const [activeTab, setActiveTab] = useState('All');
+  const businessId = useBusinessId();
+  const [activeTab, setActiveTab] = useState("All");
   const [showGenerator, setShowGenerator] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState<any>(null);
+  const [invoices, setInvoices] = useState<any[]>([]);
 
-  const tabs = ['All', 'Draft', 'Sent', 'Paid'];
-  
-  const filteredInvoices = activeTab === 'All' 
-    ? invoicesData 
-    : invoicesData.filter(invoice => invoice.status === activeTab);
+  const tabs = ["All", "Draft", "Sent", "Paid"];
 
-  const totalRevenue = invoicesData
-    .filter(inv => inv.status === 'Paid')
-    .reduce((sum, inv) => sum + inv.amount, 0);
+  // const totalRevenue = invoicesData
+  //   .filter((inv) => inv.status === "Paid")
+  //   .reduce((sum, inv) => sum + inv.amount, 0);
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'Paid': return 'bg-green-100 text-green-800';
-      case 'Sent': return 'bg-blue-100 text-blue-800';
-      case 'Draft': return 'bg-gray-100 text-gray-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case "Paid":
+        return "bg-green-100 text-green-800";
+      case "Sent":
+        return "bg-blue-100 text-blue-800";
+      case "Draft":
+        return "bg-gray-100 text-gray-800";
+      default:
+        return "bg-gray-100 text-gray-800";
     }
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      month: '2-digit',
-      day: '2-digit',
-      year: 'numeric'
+    return new Date(dateString).toLocaleDateString("en-US", {
+      month: "2-digit",
+      day: "2-digit",
+      year: "numeric",
     });
   };
 
+  const fetchInvoices = async () => {
+    const result: any = await apiClient.invoices.getBusinessInvoices({
+      businessId,
+      page: "1",
+      limit: "50",
+    });
+    setInvoices(result.invoices || []);
+  };
+
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-NG', {
-      style: 'currency',
-      currency: 'NGN',
-      minimumFractionDigits: 0
+    return new Intl.NumberFormat("en-NG", {
+      style: "currency",
+      currency: "NGN",
+      minimumFractionDigits: 0,
     }).format(amount);
   };
+
+  useEffect(() => {
+    if (businessId) fetchInvoices();
+  }, [businessId]);
 
   if (showGenerator) {
     return (
       <InvoiceGenerator
-        onClose={() => setShowGenerator(false)}
+        onClose={() => {
+          fetchInvoices();
+          setShowGenerator(false);
+        }}
       />
     );
   }
@@ -133,7 +95,7 @@ export default function Invoices() {
       {/* Content */}
       <div className="pt-16 pb-20 px-4">
         {/* Stats */}
-        <div className="bg-white rounded-xl p-4 mb-4 shadow-sm">
+        {/* <div className="bg-white rounded-xl p-4 mb-4 shadow-sm">
           <div className="grid grid-cols-3 gap-4">
             <div className="text-center">
               <p className="text-2xl font-bold text-gray-900">{invoicesData.length}</p>
@@ -150,10 +112,10 @@ export default function Invoices() {
               <p className="text-sm text-gray-600">Pending</p>
             </div>
           </div>
-        </div>
+        </div> */}
 
         {/* Tabs */}
-        <div className="flex bg-gray-100 rounded-lg p-1 mb-4">
+        {/* <div className="flex bg-gray-100 rounded-lg p-1 mb-4">
           {tabs.map((tab) => (
             <button
               key={tab}
@@ -167,11 +129,11 @@ export default function Invoices() {
               {tab}
             </button>
           ))}
-        </div>
+        </div> */}
 
         {/* Invoice List */}
         <div className="space-y-3">
-          {filteredInvoices.map((invoice) => (
+          {invoices.map((invoice) => (
             <div key={invoice.id} className="bg-white rounded-xl p-4 shadow-sm">
               <div className="flex items-center justify-between mb-3">
                 <div>
@@ -179,21 +141,31 @@ export default function Invoices() {
                   <p className="text-sm text-gray-600">{invoice.customer}</p>
                 </div>
                 <div className="text-right">
-                  <p className="font-medium text-gray-900" suppressHydrationWarning={true}>
+                  <p
+                    className="font-medium text-gray-900"
+                    suppressHydrationWarning={true}
+                  >
                     {formatDate(invoice.date)}
                   </p>
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(invoice.status)}`}>
+                  <span
+                    className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
+                      invoice.status
+                    )}`}
+                  >
                     {invoice.status}
                   </span>
                 </div>
               </div>
-              
+
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-lg font-bold text-gray-900">
                     {formatCurrency(invoice.amount)}
                   </p>
-                  <p className="text-sm text-gray-600" suppressHydrationWarning={true}>
+                  <p
+                    className="text-sm text-gray-600"
+                    suppressHydrationWarning={true}
+                  >
                     Due: {formatDate(invoice.dueDate)}
                   </p>
                 </div>
