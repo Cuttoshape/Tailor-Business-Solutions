@@ -182,7 +182,7 @@ export default function Measurements() {
                     <div className="flex items-center space-x-3">
                       <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
                         <span className="text-sm font-medium text-purple-600">
-                          {measurement.customer.name
+                          {measurement?.customer?.name
                             ? measurement.customer.name.charAt(0) +
                               measurement.customer.name.charAt(1)
                             : ""}
@@ -190,10 +190,10 @@ export default function Measurements() {
                       </div>
                       <div>
                         <p className="font-medium text-gray-800 text-sm">
-                          {measurement.customer.name}
+                          {measurement?.customer?.name}
                         </p>
                         <p className="text-xs text-gray-500">
-                          {measurement.method}
+                          {measurement?.method}
                         </p>
                       </div>
                     </div>
