@@ -64,7 +64,7 @@ export interface NewProduct {
 }
 
 export default function TailorInventory() {
-  const [buinseesId, setBuinseesId] = useState("");
+  const [businessId, setBusinessId] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [showAddProductModal, setShowAddProductModal] = useState(false);
   const [showEditProductModal, setShowEditProductModal] = useState(false);
@@ -82,10 +82,10 @@ export default function TailorInventory() {
 
   useEffect(() => {
     if (bussId) {
-      if (typeof bussId === "string") setBuinseesId(bussId);
+      if (typeof bussId === "string") setBusinessId(bussId);
     } else {
       if (user?.businessId) {
-        setBuinseesId(user.businessId);
+        setBusinessId(user.businessId);
       }
     }
   }, [bussId]);
@@ -94,7 +94,7 @@ export default function TailorInventory() {
     try {
       setLoading(true);
       const result: any = await apiClient.products.getMyAll({
-        businessId: buinseesId,
+        businessId: businessId,
         search: searchQuery,
         page: page.toString(),
         limit: "20",
@@ -110,8 +110,8 @@ export default function TailorInventory() {
   };
 
   useEffect(() => {
-    if (buinseesId) fetchProducts();
-  }, [searchQuery, page, buinseesId]);
+    if (businessId) fetchProducts();
+  }, [searchQuery, page, businessId]);
 
   const handleViewDetails = (item: Product) => {
     setShowDetailsModal(true);
@@ -145,7 +145,7 @@ export default function TailorInventory() {
         <div className="px-4 mb-6">
           <div className="grid grid-cols-1 gap-4">
             <div className="bg-white rounded-xl p-2">
-              <BusinessBanner businessId={buinseesId} />
+              <BusinessBanner businessId={businessId} />
             </div>
           </div>
         </div>

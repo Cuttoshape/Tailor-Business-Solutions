@@ -1,3 +1,4 @@
+import { useBusinessId } from "@/app/hooks/useBusinessId";
 import apiClient from "@/lib/api";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 
@@ -34,6 +35,7 @@ export default function CustomerLookup({
   labelledById,
   describedById,
 }: CustomerLookupProps) {
+  const businessId = useBusinessId();
   const [query, setQuery] = useState(initialQuery);
   const [debouncedQuery, setDebouncedQuery] = useState(initialQuery);
   const [activeIndex, setActiveIndex] = useState<number>(-1);
@@ -47,8 +49,10 @@ export default function CustomerLookup({
     const fetchData = async () => {
       try {
         setLoading(true);
-        const { customers } = await apiClient.customers.getMyCustomer();
-        setCustomers(customers);
+        const result: any = await apiClient.customers.getMyCustomer({
+          businessId,
+        });
+        setCustomers(result.customers);
       } catch (error) {
         console.error("Failed to fetch customer insights:", error);
       } finally {
@@ -57,7 +61,7 @@ export default function CustomerLookup({
     };
 
     fetchData();
-  }, []);
+  }, [businessId]);
 
   // Debounce the query for snappier typing on large lists
   useEffect(() => {
@@ -84,17 +88,6 @@ export default function CustomerLookup({
     return () => window.removeEventListener("keydown", handleKey);
   }, [open, onClose]);
 
-  const filteredCustomers = useMemo(() => {
-    if (!debouncedQuery) return customers;
-    const q = debouncedQuery.toLowerCase();
-    return customers.filter((c: Customer) => {
-      const name = c.name?.toLowerCase() ?? "";
-      const phone = c.phone?.toLowerCase() ?? "";
-      const email = c.email?.toLowerCase() ?? "";
-      return name.includes(q) || phone.includes(q) || email.includes(q);
-    });
-  }, [customers, debouncedQuery]);
-
   const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!allowBackdropClose) return;
     if (e.target === e.currentTarget) onClose();
@@ -109,10 +102,9 @@ export default function CustomerLookup({
       .join("") || "?";
 
   const moveActive = (dir: 1 | -1) => {
-    if (!filteredCustomers.length) return;
+    if (!customers.length) return;
     setActiveIndex((prev) => {
-      const next =
-        (prev + dir + filteredCustomers.length) % filteredCustomers.length;
+      const next = (prev + dir + customers.length) % customers.length;
       // Ensure the active item is visible
       const container = listRef.current;
       const item = container?.querySelector<HTMLButtonElement>(
@@ -132,7 +124,7 @@ export default function CustomerLookup({
   };
 
   const handleKeyDown: React.KeyboardEventHandler<HTMLInputElement> = (e) => {
-    if (!filteredCustomers.length) return;
+    if (!customers.length) return;
     if (e.key === "ArrowDown") {
       e.preventDefault();
       moveActive(1);
@@ -140,8 +132,8 @@ export default function CustomerLookup({
       e.preventDefault();
       moveActive(-1);
     } else if (e.key === "Enter") {
-      if (activeIndex >= 0 && activeIndex < filteredCustomers.length) {
-        onSelect(filteredCustomers[activeIndex]);
+      if (activeIndex >= 0 && activeIndex < customers.length) {
+        onSelect(customers[activeIndex]);
       }
     }
   };
@@ -195,9 +187,9 @@ export default function CustomerLookup({
 
         {/* Results */}
         <div ref={listRef} className="overflow-y-auto max-h-[60vh] p-4 mb-20">
-          {filteredCustomers.length > 0 ? (
+          {customers.length > 0 ? (
             <div className="space-y-3">
-              {filteredCustomers.map((customer: Customer, idx) => (
+              {customers.map((customer: Customer, idx) => (
                 <button
                   key={customer.id}
                   data-index={idx}

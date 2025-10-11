@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, use } from "react";
 import apiClient from "@/lib/api";
+import { useBusinessId } from "../hooks/useBusinessId";
 
 interface CustomerListProps {
   searchQuery: string;
@@ -14,6 +15,7 @@ export default function CustomerList({
   filterStatus,
   onSelectCustomer,
 }: CustomerListProps) {
+  const businessId = useBusinessId();
   const [customers, setCustomers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
@@ -21,8 +23,10 @@ export default function CustomerList({
   useEffect(() => {
     const fetchCustomers = async () => {
       try {
+        if (!businessId) return;
         setLoading(true);
-        const result: any = await apiClient.customers.getAll({
+        const result: any = await apiClient.customers.getMyCustomer({
+          businessId,
           search: searchQuery,
           page: page.toString(),
           limit: "20",
@@ -54,7 +58,7 @@ export default function CustomerList({
     };
 
     fetchCustomers();
-  }, [searchQuery, filterStatus, page]);
+  }, [searchQuery, filterStatus, page, businessId]);
 
   if (loading) {
     return (

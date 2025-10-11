@@ -1,3 +1,4 @@
+import { useBusinessId } from "@/app/hooks/useBusinessId";
 import { Product } from "@/app/inventory/page";
 import apiClient from "@/lib/api";
 import React, { useEffect, useMemo, useRef, useState } from "react";
@@ -23,7 +24,7 @@ export default function ProductLookup({
   labelledById,
   describedById,
 }: ProductLookupProps) {
-  const [buinseesId, setBuinseesId] = useState("");
+  const businessId = useBusinessId();
   const [query, setQuery] = useState(initialQuery);
   const [debouncedQuery, setDebouncedQuery] = useState(initialQuery);
   const [activeIndex, setActiveIndex] = useState<number>(-1);
@@ -34,21 +35,11 @@ export default function ProductLookup({
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
-  const raw =
-    typeof window !== "undefined" ? localStorage.getItem("user") : null;
-  const user = raw ? (JSON.parse(raw) as { businessId?: string }) : null;
-
-  useEffect(() => {
-    if (user?.businessId) {
-      setBuinseesId(user.businessId);
-    }
-  }, [user]);
-
   const fetchProducts = async () => {
     try {
       setLoading(true);
       const result: any = await apiClient.products.getMyAll({
-        businessId: buinseesId,
+        businessId: businessId,
         search: searchQuery,
         page: page.toString(),
         limit: "20",
@@ -64,8 +55,8 @@ export default function ProductLookup({
   };
 
   useEffect(() => {
-    if (buinseesId) fetchProducts();
-  }, [searchQuery, page, buinseesId]);
+    if (businessId) fetchProducts();
+  }, [searchQuery, page, businessId]);
 
   // Debounce the query for snappier typing on large lists
   useEffect(() => {

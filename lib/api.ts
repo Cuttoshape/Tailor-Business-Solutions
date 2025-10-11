@@ -154,12 +154,21 @@ class APIClient {
       typeof o?.email === "string" && o.email.trim()
         ? o.email.trim()
         : undefined;
+    const gender =
+      typeof o?.gender === "string" && o.gender.trim()
+        ? o.gender.trim()
+        : undefined;
+    const address =
+      typeof o?.address === "string" && o.address.trim()
+        ? o.address.trim()
+        : undefined;
+    const age = typeof o?.age === "number" && o.age ? o.age : undefined;
     const avatar =
       typeof o?.avatar === "string" && o.avatar.trim()
         ? o.avatar.trim()
         : undefined;
 
-    return { id, name, phone, email, avatar };
+    return { id, name, phone, email, avatar, gender, age, address };
   }
 
   private toCustomersResponse(u: unknown): { customers: Customer[] } {
@@ -176,10 +185,12 @@ class APIClient {
       return this.get(`/customers${query}`);
     },
 
-    getMyCustomer: async (): Promise<{ customers: Customer[] }> => {
-      // this.get returns parsed JSON already
-      const data = await this.get<unknown>(`/customers/my`);
-      return this.toCustomersResponse(data);
+    createMeasurements: (data: unknown) =>
+      this.post("/customers/measurements", data),
+
+    getMyCustomer: (params?: Record<string, string>) => {
+      const query = params ? `?${new URLSearchParams(params)}` : "";
+      return this.get(`/customers/my${query}`);
     },
 
     getOne: (id: string) => this.get(`/customers/${id}`),
@@ -195,6 +206,9 @@ class APIClient {
       const query = params ? `?${new URLSearchParams(params)}` : "";
       return this.get(`/orders${query}`);
     },
+    getCustomerOrders: async (customerId: string) => {
+      return await this.get(`/customers/${customerId}/orders`);
+    },
     getOne: (id: string) => this.get(`/orders/${id}`),
     getStats: () => this.get("/orders/stats"),
     create: (data: unknown) => this.post("/orders", data),
@@ -207,6 +221,16 @@ class APIClient {
     getAll: (params?: Record<string, string>) => {
       const query = params ? `?${new URLSearchParams(params)}` : "";
       return this.get(`/measurements${query}`);
+    },
+    getCustomerMeasurements: (
+      params?: Record<string, string>
+    ): Promise<unknown> => {
+      const query = params ? `?${new URLSearchParams(params)}` : "";
+      return this.get(`/measurements/customer${query}`);
+    },
+    getBusinessMeasurements: (params?: Record<string, string>) => {
+      const query = params ? `?${new URLSearchParams(params)}` : "";
+      return this.get(`/measurements/business${query}`);
     },
     getOne: (id: string) => this.get(`/measurements/${id}`),
     create: (data: unknown) => this.post("/measurements", data),

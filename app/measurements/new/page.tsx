@@ -4,6 +4,7 @@ import CustomerBioAddForm from "@/components/CustomerBioAddForm";
 import CustomerLookup, { Customer } from "@/components/CustomerLookup";
 import apiClient from "@/lib/api";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import React, { useEffect, useMemo, useState } from "react";
 
 type Gender = "male" | "female";
@@ -20,6 +21,7 @@ interface CustomerForm {
   gender: Gender;
   age?: number | "";
   address?: string;
+  phone?: string;
 }
 
 export default function MeasurementForm({
@@ -27,6 +29,8 @@ export default function MeasurementForm({
 }: {
   setShowAddForm: (val: boolean) => void;
 }) {
+  const [businessId, setBusinessId] = useState("");
+  const router = useRouter();
   const [showCustomerLookup, setShowCustomerLookup] = useState(false);
   const [formData, setFormData] = useState<CustomerForm>({
     name: "",
@@ -34,6 +38,7 @@ export default function MeasurementForm({
     gender: "female", // default
     age: "",
     address: "",
+    phone: "",
   });
   const [measurementData, setMeasurementData] = useState<
     Record<string, string>
@@ -138,10 +143,21 @@ export default function MeasurementForm({
     { key: "thigh", label: "Thigh (of one leg)", unit: "inches" },
   ];
 
+  const raw =
+    typeof window !== "undefined" ? localStorage.getItem("user") : null;
+  const user = raw ? (JSON.parse(raw) as { businessId?: string }) : null;
+
+  useEffect(() => {
+    if (user?.businessId) {
+      setBusinessId(user.businessId);
+    }
+  }, [user]);
+
   const activeMeasurements =
     formData.gender === "female" ? femaleMeasurements : maleMeasurements;
 
   const handleCustomerSelect = (customer: Customer) => {
+    console.log("Selected customer:", customer);
     setSelectedCustomer(customer);
     // optionally prefill
     setFormData((prev) => ({
@@ -165,21 +181,23 @@ export default function MeasurementForm({
         gender: formData.gender,
         age: formData.age === "" ? undefined : Number(formData.age),
         address: formData.address,
+        phone: formData.phone,
         id: selectedCustomer?.id,
       },
-      measurements: measurementData, // as keyed values in inches
+      measurements: measurementData,
+      businessId, // as keyed values in inches
     };
 
     try {
-      await apiClient.customers.create(payload);
-      setShowAddForm(false);
+      await apiClient.customers.createMeasurements(payload);
+      router.push("/measurements");
     } catch (err) {
       console.error("Failed to save measurement:", err);
     }
   };
 
   return (
-    <div className="fixed inset-0 bg-white z-50 overflow-y-auto">
+    <div className="fixed inset-0 bg-white z-50 overflow-y-auto mb-20">
       <div className="sticky top-0 bg-white border-b border-gray-200 px-4 py-3">
         <div className="flex items-center justify-between">
           <Link

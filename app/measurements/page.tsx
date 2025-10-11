@@ -1,11 +1,54 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import apiClient from "@/lib/api";
+import MeasurementDetail from "./MeasurementDetailModal";
 
 export default function Measurements() {
   const [activeTab, setActiveTab] = useState("manual");
-  const [showAddForm, setShowAddForm] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [measurements, setMeasurements] = useState([]);
+  const [showDetail, setShowDetail] = useState(false);
+  const [selectedMeasurement, setSelectedMeasurement] = useState<any>(null);
+  const [businessId, setBusinessId] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [page, setPage] = useState(1);
+
+  const raw =
+    typeof window !== "undefined" ? localStorage.getItem("user") : null;
+  const user = raw ? (JSON.parse(raw) as { businessId?: string }) : null;
+
+  const fetchMeasurements = async () => {
+    try {
+      setLoading(true);
+      const result: any = await apiClient.measurements.getBusinessMeasurements({
+        businessId: businessId,
+        search: searchQuery,
+        page: page.toString(),
+        limit: "20",
+      });
+
+      setMeasurements(result.measurements || []);
+    } catch (error) {
+      console.error("Failed to fetch products:", error);
+      setMeasurements([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (user?.businessId) {
+      setBusinessId(user.businessId);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (businessId) fetchMeasurements();
+  }, [searchQuery, page, businessId]);
+
+  console.log("----measurements----- ", measurements);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -124,45 +167,37 @@ export default function Measurements() {
         {activeTab === "manual" && (
           <div className="px-4 space-y-4">
             <div className="bg-white rounded-xl p-4 shadow-sm">
-              <h4 className="font-medium text-gray-800 mb-3">
-                Manual Measurements
-              </h4>
+              <h4 className="font-medium text-gray-800 mb-3">Measurements</h4>
               <div className="space-y-3">
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
-                      <span className="text-sm font-medium text-purple-600">
-                        ED
-                      </span>
+                {measurements?.map((measurement) => (
+                  <div
+                    onClick={() => {
+                      setSelectedMeasurement(measurement);
+                      setShowDetail(true);
+                    }}
+                    className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                  >
+                    <div className="flex items-center space-x-3">
+                      <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
+                        <span className="text-sm font-medium text-purple-600">
+                          {measurement.customer.name
+                            ? measurement.customer.name.charAt(0) +
+                              measurement.customer.name.charAt(1)
+                            : ""}
+                        </span>
+                      </div>
+                      <div>
+                        <p className="font-medium text-gray-800 text-sm">
+                          {measurement.customer.name}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {measurement.method}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-medium text-gray-800 text-sm">
-                        Emma Davis
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        Manual entry - On spot
-                      </p>
-                    </div>
+                    <i className="ri-arrow-right-s-line text-gray-400"></i>
                   </div>
-                  <i className="ri-arrow-right-s-line text-gray-400"></i>
-                </div>
-
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
-                      <span className="text-sm font-medium text-orange-600">
-                        JW
-                      </span>
-                    </div>
-                    <div>
-                      <p className="font-medium text-gray-800 text-sm">
-                        John Wilson
-                      </p>
-                      <p className="text-xs text-gray-500">Manual with order</p>
-                    </div>
-                  </div>
-                  <i className="ri-arrow-right-s-line text-gray-400"></i>
-                </div>
+                ))}
               </div>
             </div>
 
@@ -190,6 +225,13 @@ export default function Measurements() {
           </div>
         )}
       </div>
+
+      {showDetail && selectedMeasurement && (
+        <MeasurementDetail
+          measurement={selectedMeasurement}
+          setShowDetail={setShowDetail}
+        />
+      )}
     </div>
   );
 }
