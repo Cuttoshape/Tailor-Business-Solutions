@@ -60,6 +60,17 @@ export default function CustomerList({
     fetchCustomers();
   }, [searchQuery, filterStatus, page, businessId]);
 
+  // Listen for customer deletions from detail modal and update local list
+  useEffect(() => {
+    const onDeleted = (e: any) => {
+      const id = e?.detail?.id;
+      if (!id) return;
+      setCustomers((prev) => prev.filter((c) => String(c.id) !== String(id)));
+    };
+    window.addEventListener("customer-deleted", onDeleted as any);
+    return () => window.removeEventListener("customer-deleted", onDeleted as any);
+  }, []);
+
   if (loading) {
     return (
       <div className="px-4 py-8">

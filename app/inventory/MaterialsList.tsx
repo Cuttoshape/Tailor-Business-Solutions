@@ -4,12 +4,14 @@ interface MaterialsListProps {
   products: Product[];
   handleViewDetails: (item: Product) => void;
   handleEditProduct: (item: Product) => void;
+  handleDeleteProduct?: (item: Product) => void;
 }
 
 export default function MaterialsList({
   products,
   handleViewDetails,
   handleEditProduct,
+  handleDeleteProduct,
 }: MaterialsListProps) {
   return (
     <div className="space-y-3">
@@ -38,20 +40,32 @@ export default function MaterialsList({
                 <div>
                   ${item?.lowPrice} - ${item?.highPrice}
                 </div>
-                <button
-                  type="button"
-                  onClick={() => handleEditProduct(item)}
-                  className="bg-indigo-100 text-indigo-600 px-3 py-1 rounded-lg text-xs font-medium"
-                >
-                  Edit
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleViewDetails(item)}
-                  className="bg-indigo-100 text-indigo-600 px-3 py-1 rounded-lg text-xs font-medium"
-                >
-                  Details
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleViewDetails(item)}
+                    className="bg-indigo-100 text-indigo-600 px-3 py-1 rounded-lg text-xs font-medium"
+                  >
+                    Details
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleEditProduct(item)}
+                    className="bg-indigo-100 text-indigo-600 px-3 py-1 rounded-lg text-xs font-medium"
+                  >
+                    Edit
+                  </button>
+                  {handleDeleteProduct && (
+                    <button
+                      type="button"
+                      title="Delete"
+                      onClick={() => handleDeleteProduct(item)}
+                      className="w-8 h-8 flex items-center justify-center rounded-lg bg-red-50 text-red-600"
+                    >
+                      <i className="ri-delete-bin-6-line" />
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           </div>
