@@ -3,7 +3,13 @@
 import { useState } from "react";
 import Link from "next/link";
 
-export default function Costing() {
+export default function Costing({
+  showCurrencySelection = true,
+  showHeader = true,
+  onSave = (items: any) => {},
+  onClose = () => {},
+  hideFields = [],
+}) {
   const [items, setItems] = useState([
     {
       id: 1,
@@ -18,6 +24,16 @@ export default function Costing() {
   const [handlingShipping, setHandlingShipping] = useState(0);
   const [vatRate, setVatRate] = useState(7.5); // Default VAT rate for Nigeria
   const [currency, setCurrency] = useState("USD");
+
+  const handleSave = () => {
+    const totalCost = items.reduce(
+      (sum, item) => sum + item.cost * item.quantity,
+      0
+    );
+    const overallCost = totalCost + profit + workmanship;
+
+    onSave({ items, workmanship, profit, overallCost });
+  };
 
   const categories = [
     "Fabric & Main Materials",
@@ -112,9 +128,19 @@ export default function Costing() {
     (sum, item) => sum + item.cost * item.quantity,
     0
   );
-  const subtotalWithProfitAndShipping = totalCost + profit + handlingShipping;
+
+  let subtotalWithProfitAndShipping = totalCost + profit + handlingShipping;
+
+  if (!hideFields.includes("VAT")) {
+    subtotalWithProfitAndShipping = totalCost + profit;
+  }
+
   const vatAmount = (subtotalWithProfitAndShipping * vatRate) / 100;
-  const totalWithVAT = subtotalWithProfitAndShipping + vatAmount;
+
+  let totalWithVAT = subtotalWithProfitAndShipping;
+  if (!hideFields.includes("VAT")) {
+    totalWithVAT = subtotalWithProfitAndShipping + vatAmount;
+  }
 
   const convertCurrency = (amount: number) => {
     if (currency === "NGN") {
@@ -132,45 +158,49 @@ export default function Costing() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="fixed top-0 w-full bg-white z-50 px-4 py-3 shadow-sm">
-        <div className="flex items-center justify-between">
-          <Link href="/" className="w-8 h-8 flex items-center justify-center">
-            <i className="ri-arrow-left-line text-gray-600 text-lg"></i>
-          </Link>
-          <h1 className="font-semibold text-gray-800">Cost Calculator</h1>
-          <div className="w-8 h-8"></div>
-        </div>
-      </div>
-
-      <div className="pt-16 pb-20 px-4">
-        {/* Currency Selector */}
-        <div className="bg-white rounded-xl p-4 shadow-sm mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Currency
-          </label>
-          <div className="flex space-x-2">
-            <button
-              onClick={() => setCurrency("USD")}
-              className={`px-4 py-2 rounded-lg text-sm font-medium ${
-                currency === "USD"
-                  ? "bg-indigo-600 text-white"
-                  : "bg-gray-100 text-gray-600"
-              }`}
-            >
-              USD ($)
-            </button>
-            <button
-              onClick={() => setCurrency("NGN")}
-              className={`px-4 py-2 rounded-lg text-sm font-medium ${
-                currency === "NGN"
-                  ? "bg-indigo-600 text-white"
-                  : "bg-gray-100 text-gray-600"
-              }`}
-            >
-              NGN (₦)
-            </button>
+      {showHeader && (
+        <div className="w-full bg-white z-50 px-4 py-3 shadow-sm">
+          <div className="flex items-center justify-between">
+            <Link href="/" className="w-8 h-8 flex items-center justify-center">
+              <i className="ri-arrow-left-line text-gray-600 text-lg"></i>
+            </Link>
+            <h1 className="font-semibold text-gray-800">Cost Calculator</h1>
+            <div className="w-8 h-8"></div>
           </div>
         </div>
+      )}
+
+      <div className="pt-1 pb-20 px-4">
+        {/* Currency Selector */}
+        {showCurrencySelection && (
+          <div className="bg-white rounded-xl p-4 shadow-sm mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Currency
+            </label>
+            <div className="flex space-x-2">
+              <button
+                onClick={() => setCurrency("USD")}
+                className={`px-4 py-2 rounded-lg text-sm font-medium ${
+                  currency === "USD"
+                    ? "bg-indigo-600 text-white"
+                    : "bg-gray-100 text-gray-600"
+                }`}
+              >
+                USD ($)
+              </button>
+              <button
+                onClick={() => setCurrency("NGN")}
+                className={`px-4 py-2 rounded-lg text-sm font-medium ${
+                  currency === "NGN"
+                    ? "bg-indigo-600 text-white"
+                    : "bg-gray-100 text-gray-600"
+                }`}
+              >
+                NGN (₦)
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* All Categories with Quick Add */}
         {categories.map((category) => (
@@ -334,71 +364,76 @@ export default function Costing() {
                 className="w-full p-3 border border-gray-200 rounded-lg text-sm"
               />
             </div>
-
-            <div>
-              <label className="block text-sm text-gray-600 mb-2">
-                Handling & Shipping
-              </label>
-              <input
-                type="number"
-                placeholder="0.00"
-                value={handlingShipping}
-                onChange={(e) =>
-                  setHandlingShipping(parseFloat(e.target.value) || 0)
-                }
-                className="w-full p-3 border border-gray-200 rounded-lg text-sm"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm text-gray-600 mb-2">
-                VAT Rate (%)
-              </label>
-              <div className="flex space-x-2">
+            {!hideFields.includes("Handling") && (
+              <div>
+                <label className="block text-sm text-gray-600 mb-2">
+                  Handling & Shipping
+                </label>
                 <input
                   type="number"
-                  placeholder="7.5"
-                  value={vatRate}
-                  onChange={(e) => setVatRate(parseFloat(e.target.value) || 0)}
-                  className="flex-1 p-3 border border-gray-200 rounded-lg text-sm"
-                  step="0.1"
-                  min="0"
-                  max="100"
+                  placeholder="0.00"
+                  value={handlingShipping}
+                  onChange={(e) =>
+                    setHandlingShipping(parseFloat(e.target.value) || 0)
+                  }
+                  className="w-full p-3 border border-gray-200 rounded-lg text-sm"
                 />
-                <div className="flex space-x-1">
-                  <button
-                    onClick={() => setVatRate(0)}
-                    className={`px-3 py-2 rounded text-xs ${
-                      vatRate === 0
-                        ? "bg-indigo-600 text-white"
-                        : "bg-gray-100 text-gray-600"
-                    }`}
-                  >
-                    0%
-                  </button>
-                  <button
-                    onClick={() => setVatRate(7.5)}
-                    className={`px-3 py-2 rounded text-xs ${
-                      vatRate === 7.5
-                        ? "bg-indigo-600 text-white"
-                        : "bg-gray-100 text-gray-600"
-                    }`}
-                  >
-                    7.5%
-                  </button>
-                  <button
-                    onClick={() => setVatRate(15)}
-                    className={`px-3 py-2 rounded text-xs ${
-                      vatRate === 15
-                        ? "bg-indigo-600 text-white"
-                        : "bg-gray-100 text-gray-600"
-                    }`}
-                  >
-                    15%
-                  </button>
+              </div>
+            )}
+
+            {!hideFields.includes("VAT") && (
+              <div>
+                <label className="block text-sm text-gray-600 mb-2">
+                  VAT Rate (%)
+                </label>
+                <div className="flex space-x-2">
+                  <input
+                    type="number"
+                    placeholder="7.5"
+                    value={vatRate}
+                    onChange={(e) =>
+                      setVatRate(parseFloat(e.target.value) || 0)
+                    }
+                    className="flex-1 p-3 border border-gray-200 rounded-lg text-sm"
+                    step="0.1"
+                    min="0"
+                    max="100"
+                  />
+                  <div className="flex space-x-1">
+                    <button
+                      onClick={() => setVatRate(0)}
+                      className={`px-3 py-2 rounded text-xs ${
+                        vatRate === 0
+                          ? "bg-indigo-600 text-white"
+                          : "bg-gray-100 text-gray-600"
+                      }`}
+                    >
+                      0%
+                    </button>
+                    <button
+                      onClick={() => setVatRate(7.5)}
+                      className={`px-3 py-2 rounded text-xs ${
+                        vatRate === 7.5
+                          ? "bg-indigo-600 text-white"
+                          : "bg-gray-100 text-gray-600"
+                      }`}
+                    >
+                      7.5%
+                    </button>
+                    <button
+                      onClick={() => setVatRate(15)}
+                      className={`px-3 py-2 rounded text-xs ${
+                        vatRate === 15
+                          ? "bg-indigo-600 text-white"
+                          : "bg-gray-100 text-gray-600"
+                      }`}
+                    >
+                      15%
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
 
@@ -430,13 +465,16 @@ export default function Costing() {
               </span>
             </div>
 
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-600">Handling & Shipping:</span>
-              <span className="font-medium">
-                {currency === "USD" ? "$" : "₦"}
-                {convertCurrency(handlingShipping)}
-              </span>
-            </div>
+            {!hideFields.includes("Handling") && (
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600">Handling & Shipping:</span>
+                <span className="font-medium">
+                  {currency === "USD" ? "$" : "₦"}
+                  {convertCurrency(handlingShipping)}
+                </span>
+              </div>
+            )}
+
             <div className="border-t pt-2">
               <div className="flex justify-between text-sm">
                 <span className="text-gray-600">Subtotal:</span>
@@ -446,13 +484,16 @@ export default function Costing() {
                 </span>
               </div>
             </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-600">VAT ({vatRate}%):</span>
-              <span className="font-medium">
-                {currency === "USD" ? "$" : "₦"}
-                {convertCurrency(vatAmount)}
-              </span>
-            </div>
+            {!hideFields.includes("VAT") && (
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600">VAT ({vatRate}%):</span>
+                <span className="font-medium">
+                  {currency === "USD" ? "$" : "₦"}
+                  {convertCurrency(vatAmount)}
+                </span>
+              </div>
+            )}
+
             <div className="border-t pt-2">
               <div className="flex justify-between">
                 <span className="font-semibold text-gray-800">
@@ -469,11 +510,17 @@ export default function Costing() {
 
         {/* Action Buttons */}
         <div className="grid grid-cols-2 gap-4">
-          <button className="w-full bg-indigo-600 text-white py-3 rounded-lg font-medium">
+          <button
+            onClick={onClose}
+            className="w-full bg-indigo-600 text-white py-1 rounded-lg font-medium"
+          >
             Close
           </button>
-          <button className="w-full bg-gray-800 text-white py-3 rounded-lg font-medium">
-            Convert to invoice
+          <button
+            onClick={handleSave}
+            className="w-full bg-gray-800 text-white py-1 rounded-lg font-medium"
+          >
+            Save
           </button>
         </div>
       </div>

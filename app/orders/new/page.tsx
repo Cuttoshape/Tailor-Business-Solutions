@@ -8,300 +8,204 @@ import CustomerLookup, { Customer } from "@/components/CustomerLookup";
 import ProductLookup from "@/components/ProductLookup";
 import { Product } from "@/app/inventory/page";
 import CustomerBioAddForm from "@/components/CustomerBioAddForm";
+import BusinessBanner from "@/components/BusinessBanner";
+import { useBusinessId } from "@/app/hooks/useBusinessId";
+import {
+  femaleMeasurements,
+  maleMeasurements,
+} from "@/app/measurements/new/page";
+import Costing from "@/app/costing/page";
 
-export default function NewOrderPage() {
-  const router = useRouter();
-  const [currentStep, setCurrentStep] = useState(1);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showCustomerLookup, setShowCustomerLookup] = useState(false);
-  const [customerSearchQuery, setCustomerSearchQuery] = useState("");
-  const [showProuctLookup, setShowProductLookup] = useState(false);
-  const [selectedCustomer, setSelectedCustomer] = useState<
-    Customer | undefined
-  >(undefined);
+const activeMeasurements = {
+  female: femaleMeasurements,
+  male: maleMeasurements,
+};
 
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-
-  const [formData, setFormData] = useState({
-    customerName: "",
-    customerPhone: "",
-    customerEmail: "",
-    placeOfSale: "",
-    referralSource: "",
-    marketplaceName: "",
-    itemType: "",
-    customItem: "",
-    measurements: {
-      chest: "",
-      waist: "",
-      hips: "",
-      length: "",
-      shoulders: "",
-      sleeves: "",
-    },
-    fabric: "",
-    color: "",
-    specialRequests: "",
-    deliveryDate: "",
-    urgentOrder: false,
-    estimatedPrice: "",
-    depositAmount: "",
-    paymentStatus: "pending",
-  });
-
-  // Mock customer data (in real app, this would come from database)
-  const existingCustomers = [
-    {
-      id: 1,
-      name: "Sarah Johnson",
-      email: "sarah.j@email.com",
-      phone: "+234 801 234 5678",
-      avatar: "SJ",
-      measurements: {
-        chest: "36",
-        waist: "28",
-        hips: "38",
-        length: "42",
-        shoulders: "16",
-        sleeves: "24",
-      },
-    },
-    {
-      id: 2,
-      name: "Michael Adebayo",
-      email: "michael.a@email.com",
-      phone: "+234 802 345 6789",
-      avatar: "MA",
-      measurements: {
-        chest: "42",
-        waist: "34",
-        hips: "40",
-        length: "44",
-        shoulders: "18",
-        sleeves: "26",
-      },
-    },
-    {
-      id: 3,
-      name: "Fatima Hassan",
-      email: "fatima.h@email.com",
-      phone: "+234 803 456 7890",
-      avatar: "FH",
-      measurements: {
-        chest: "34",
-        waist: "26",
-        hips: "36",
-        length: "40",
-        shoulders: "15",
-        sleeves: "22",
-      },
-    },
-    {
-      id: 4,
-      name: "David Okafor",
-      email: "david.o@email.com",
-      phone: "+234 804 567 8901",
-      avatar: "DO",
-      measurements: {
-        chest: "40",
-        waist: "32",
-        hips: "38",
-        length: "43",
-        shoulders: "17",
-        sleeves: "25",
-      },
-    },
-  ];
-
-  const itemTypes = [
-    {
-      id: "wedding-dress",
-      name: "Wedding Dress",
-      icon: "ri-heart-line",
-      price: 450,
-    },
-    {
-      id: "business-suit",
-      name: "Business Suit",
-      icon: "ri-briefcase-line",
-      price: 320,
-    },
-    {
-      id: "evening-gown",
-      name: "Evening Gown",
-      icon: "ri-star-line",
-      price: 380,
-    },
-    {
-      id: "casual-shirt",
-      name: "Casual Shirt",
-      icon: "ri-shirt-line",
-      price: 85,
-    },
-    {
-      id: "formal-dress",
-      name: "Formal Dress",
-      icon: "ri-user-6-line",
-      price: 280,
-    },
-    { id: "custom", name: "Custom Item", icon: "ri-add-circle-line", price: 0 },
-  ];
-
-  const fabrics = [
-    "Cotton",
-    "Silk",
-    "Wool",
-    "Linen",
-    "Polyester",
-    "Chiffon",
-    "Satin",
-    "Velvet",
-    "Denim",
-    "Lace",
-  ];
-
-  const colors = [
-    { name: "Black", value: "#000000" },
-    { name: "White", value: "#FFFFFF" },
-    { name: "Navy", value: "#1e3a8a" },
-    { name: "Gray", value: "#6b7280" },
-    { name: "Red", value: "#dc2626" },
-    { name: "Blue", value: "#2563eb" },
-    { name: "Green", value: "#16a34a" },
-    { name: "Purple", value: "#9333ea" },
-    { name: "Pink", value: "#ec4899" },
-    { name: "Brown", value: "#a3a3a3" },
-  ];
-
-  const salesChannels = [
-    {
-      id: "walk-in",
-      name: "Walk-in Store",
-      icon: "ri-store-2-line",
-      description: "Customer visited physical store",
-    },
-    {
-      id: "instagram",
-      name: "Instagram",
-      icon: "ri-instagram-line",
-      description: "Social media referral",
-    },
-    {
-      id: "whatsapp",
-      name: "WhatsApp",
-      icon: "ri-whatsapp-line",
-      description: "Direct messaging",
-    },
-    {
-      id: "facebook",
-      name: "Facebook",
-      icon: "ri-facebook-line",
-      description: "Facebook page or ads",
-    },
-    {
-      id: "referral",
-      name: "Customer Referral",
-      icon: "ri-user-heart-line",
-      description: "Referred by existing customer",
-    },
-    {
-      id: "website",
-      name: "Website",
-      icon: "ri-global-line",
-      description: "Online website inquiry",
-    },
-    {
-      id: "phone",
-      name: "Phone Call",
-      icon: "ri-phone-line",
-      description: "Direct phone contact",
-    },
-    {
-      id: "marketplace",
-      name: "Marketplace/Event",
-      icon: "ri-calendar-event-line",
-      description: "Trade show or market event",
-    },
-  ];
-
-  const filteredCustomers = existingCustomers.filter(
-    (customer) =>
-      customer.name.toLowerCase().includes(customerSearchQuery.toLowerCase()) ||
-      customer.phone.includes(customerSearchQuery) ||
-      customer.email.toLowerCase().includes(customerSearchQuery.toLowerCase())
-  );
-
-  const handleCustomerSelect = (customer: any) => {
-    setSelectedCustomer(customer);
-    setFormData((prev) => ({
-      ...prev,
-      customerName: customer.name,
-      customerPhone: customer.phone,
-      customerEmail: customer.email,
-      measurements: customer.measurements,
-    }));
-    setShowCustomerLookup(false);
-    setCustomerSearchQuery("");
+type OrderData = {
+  customer: {
+    id: string;
+    name: string;
+    email: string;
+    phone: string;
+    address: string;
+    gender: string;
+    age: string;
   };
+  items: Array<{
+    id: string;
+    name: string;
+    description: string;
+    quantity: number;
+    price: number;
+    lowPrice: string;
+    highPrice: string;
+    options: Record<string, any>;
+    fabric: string;
+    costMethod: string;
+    fabricPrice: string;
+    fabricName: string;
+  }>;
+  vatOrTax: number;
+  measurements: Record<string, string>;
+  shippingCost: number;
+  profit: number;
+  estimatedDelivery: string;
+  notes: string;
+  issueDate: string;
+  expiryDate: string;
+  placeOfSale: string;
+  referralSource: string;
+  marketplaceName: string;
+  deliveryDate: string;
+  urgentOrder: boolean;
+  estimatedPrice: string;
+  depositAmount: string;
+  paymentStatus: string;
+};
 
-  const handleInputChange = (field: string, value: any) => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
-  };
+type ItemType = {
+  id: string;
+  name: string;
+  icon: string;
+  price: number;
+};
 
-  const handleItemTypeSelect = (item: any) => {
-    setFormData((prev) => ({
-      ...prev,
-      itemType: item.id,
-      estimatedPrice: item.price.toString(),
-    }));
-  };
+const itemTypes: ItemType[] = [
+  {
+    id: "wedding-dress",
+    name: "Wedding Dress",
+    icon: "ri-heart-line",
+    price: 450,
+  },
+  {
+    id: "business-suit",
+    name: "Business Suit",
+    icon: "ri-briefcase-line",
+    price: 320,
+  },
+  {
+    id: "evening-gown",
+    name: "Evening Gown",
+    icon: "ri-star-line",
+    price: 380,
+  },
+  {
+    id: "casual-shirt",
+    name: "Casual Shirt",
+    icon: "ri-shirt-line",
+    price: 85,
+  },
+  {
+    id: "formal-dress",
+    name: "Formal Dress",
+    icon: "ri-user-6-line",
+    price: 280,
+  },
+  { id: "custom", name: "Custom Item", icon: "ri-add-circle-line", price: 0 },
+];
 
-  const nextStep = () => {
-    if (currentStep < 5) {
-      setCurrentStep(currentStep + 1);
-    }
-  };
+const fabrics = [
+  "Cotton",
+  "Silk",
+  "Wool",
+  "Linen",
+  "Polyester",
+  "Chiffon",
+  "Satin",
+  "Velvet",
+  "Denim",
+  "Lace",
+];
 
-  const prevStep = () => {
-    if (currentStep > 1) {
-      setCurrentStep(currentStep - 1);
-    }
-  };
+const colors = [
+  { name: "Black", value: "#000000" },
+  { name: "White", value: "#FFFFFF" },
+  { name: "Navy", value: "#1e3a8a" },
+  { name: "Gray", value: "#6b7280" },
+  { name: "Red", value: "#dc2626" },
+  { name: "Blue", value: "#2563eb" },
+  { name: "Green", value: "#16a34a" },
+  { name: "Purple", value: "#9333ea" },
+  { name: "Pink", value: "#ec4899" },
+  { name: "Brown", value: "#a3a3a3" },
+];
 
-  const renderStepIndicator = () => (
-    <div className="flex items-center justify-center space-x-2 mb-6">
-      {[1, 2, 3, 4, 5].map((step) => (
-        <div key={step} className="flex items-center">
-          <div
-            className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-              step <= currentStep
-                ? "bg-indigo-600 text-white"
-                : "bg-gray-200 text-gray-500"
-            }`}
-          >
-            {step}
-          </div>
-          {step < 5 && (
-            <div
-              className={`w-6 h-0.5 ${
-                step < currentStep ? "bg-indigo-600" : "bg-gray-200"
-              }`}
-            ></div>
-          )}
-        </div>
-      ))}
-    </div>
-  );
+type SalesChannel = {
+  id: string;
+  name: string;
+  icon: string;
+  description: string;
+};
 
-  const handleProductSelect = (product: Product) => {
-    setSelectedProduct(product);
-    setShowProductLookup(false);
-  };
+const salesChannels: SalesChannel[] = [
+  {
+    id: "walk-in",
+    name: "Walk-in Store",
+    icon: "ri-store-2-line",
+    description: "Customer visited physical store",
+  },
+  {
+    id: "instagram",
+    name: "Instagram",
+    icon: "ri-instagram-line",
+    description: "Social media referral",
+  },
+  {
+    id: "whatsapp",
+    name: "WhatsApp",
+    icon: "ri-whatsapp-line",
+    description: "Direct messaging",
+  },
+  {
+    id: "facebook",
+    name: "Facebook",
+    icon: "ri-facebook-line",
+    description: "Facebook page or ads",
+  },
+  {
+    id: "referral",
+    name: "Customer Referral",
+    icon: "ri-user-heart-line",
+    description: "Referred by existing customer",
+  },
+  {
+    id: "website",
+    name: "Website",
+    icon: "ri-global-line",
+    description: "Online website inquiry",
+  },
+  {
+    id: "phone",
+    name: "Phone Call",
+    icon: "ri-phone-line",
+    description: "Direct phone contact",
+  },
+  {
+    id: "marketplace",
+    name: "Marketplace/Event",
+    icon: "ri-calendar-event-line",
+    description: "Trade show or market event",
+  },
+];
 
-  const renderStep1 = () => (
+interface CustomerInfoStepProps {
+  orderData: OrderData;
+  setCustomer: (customer: any) => void;
+  showCustomerLookup: boolean;
+  setShowCustomerLookup: (val: boolean) => void;
+  handleCustomerSelect: (customer: Customer) => void;
+  selectedCustomer?: Customer;
+}
+
+const CustomerInfoStep: React.FC<CustomerInfoStepProps> = ({
+  orderData,
+  setCustomer,
+  showCustomerLookup,
+  setShowCustomerLookup,
+  handleCustomerSelect,
+  selectedCustomer,
+}) => {
+  return (
     <div className="space-y-6">
       <div className="text-center mb-6">
         <h2 className="text-xl font-semibold text-gray-900 mb-2">
@@ -319,89 +223,80 @@ export default function NewOrderPage() {
           className="flex-1 py-2 px-4 bg-indigo-50 text-indigo-600 rounded-lg font-medium text-sm flex items-center justify-center space-x-2"
         >
           <i className="ri-search-line"></i>
-          <span>Find Existing Customer</span>
-        </button>
-
-        <button
-          onClick={() => {
-            setSelectedCustomer(undefined);
-            setFormData((prev) => ({
-              ...prev,
-              customerName: "",
-              customerPhone: "",
-              customerEmail: "",
-              measurements: {
-                chest: "",
-                waist: "",
-                hips: "",
-                length: "",
-                shoulders: "",
-                sleeves: "",
-              },
-            }));
-          }}
-          className="flex-1 py-2 px-4 bg-gray-50 text-gray-600 rounded-lg font-medium text-sm flex items-center justify-center space-x-2"
-        >
-          <i className="ri-user-add-line"></i>
-          <span>New Customer</span>
+          <span>Find Customer</span>
         </button>
       </div>
 
-      {/* Selected Customer Display */}
-      {selectedCustomer && (
-        <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-              <span className="text-sm font-medium text-green-600">
-                {selectedCustomer.name
-                  ? selectedCustomer.name.charAt(0) +
-                    selectedCustomer.name.charAt(1)
-                  : ""}
-              </span>
-            </div>
-            <div className="flex-1">
-              <p className="font-medium text-green-900">
-                {selectedCustomer.name}
-              </p>
-              <p className="text-sm text-green-600">{selectedCustomer.phone}</p>
-            </div>
-            <button
-              onClick={() => {
-                setSelectedCustomer(undefined);
-                setFormData((prev) => ({
-                  ...prev,
-                  customerName: "",
-                  customerPhone: "",
-                  customerEmail: "",
-                  measurements: {
-                    chest: "",
-                    waist: "",
-                    hips: "",
-                    length: "",
-                    shoulders: "",
-                    sleeves: "",
-                  },
-                }));
-              }}
-              className="w-6 h-6 flex items-center justify-center"
-            >
-              <i className="ri-close-line text-green-600"></i>
-            </button>
-          </div>
-        </div>
-      )}
-
-      {!selectedCustomer?.id && (
-        <CustomerBioAddForm
-          customer={selectedCustomer}
-          formData={formData}
-          setFormData={setFormData}
-        />
-      )}
+      <CustomerBioAddForm
+        customer={selectedCustomer}
+        formData={orderData.customer}
+        setFormData={setCustomer}
+      />
     </div>
   );
+};
 
-  const renderStep2 = () => (
+interface MeasurementsStepProps {
+  gender: string;
+  measurements: Record<string, string>;
+  onMeasurementChange: (key: string, value: string) => void;
+  activeMeasurements: typeof femaleMeasurements;
+}
+
+const MeasurementsStep: React.FC<MeasurementsStepProps> = ({
+  gender,
+  measurements,
+  onMeasurementChange,
+  activeMeasurements,
+}) => {
+  return (
+    <div>
+      <h4 className="font-medium text-gray-800 mb-3">
+        Body Measurements {gender === "female" ? "(Female)" : "(Male)"}
+      </h4>
+      <div className="space-y-3">
+        {gender &&
+          activeMeasurements[gender as "female" | "male"]?.map((m) => (
+            <div key={m.key}>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                {m.label}
+              </label>
+              <div className="relative">
+                <input
+                  type="number"
+                  step="0.1"
+                  className="w-full p-3 pr-16 border border-gray-200 rounded-lg text-sm"
+                  placeholder="0.0"
+                  value={measurements[m.key] ?? ""}
+                  onChange={(e) => onMeasurementChange(m.key, e.target.value)}
+                />
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-500">
+                  {m.unit}
+                </span>
+              </div>
+            </div>
+          ))}
+      </div>
+    </div>
+  );
+};
+
+interface PlaceOfSaleStepProps {
+  placeOfSale: string;
+  referralSource: string;
+  marketplaceName: string;
+  onInputChange: (field: string, value: any) => void;
+  salesChannels: SalesChannel[];
+}
+
+const PlaceOfSaleStep: React.FC<PlaceOfSaleStepProps> = ({
+  placeOfSale,
+  referralSource,
+  marketplaceName,
+  onInputChange,
+  salesChannels,
+}) => {
+  return (
     <div className="space-y-6">
       <div className="text-center mb-6">
         <h2 className="text-xl font-semibold text-gray-900 mb-2">
@@ -414,9 +309,9 @@ export default function NewOrderPage() {
         {salesChannels.map((channel) => (
           <button
             key={channel.id}
-            onClick={() => handleInputChange("placeOfSale", channel.id)}
+            onClick={() => onInputChange("placeOfSale", channel.id)}
             className={`p-4 rounded-xl border-2 transition-all text-left ${
-              formData.placeOfSale === channel.id
+              placeOfSale === channel.id
                 ? "border-indigo-600 bg-indigo-50"
                 : "border-gray-200 bg-white"
             }`}
@@ -424,14 +319,12 @@ export default function NewOrderPage() {
             <div className="flex items-center space-x-3">
               <div
                 className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                  formData.placeOfSale === channel.id
-                    ? "bg-indigo-100"
-                    : "bg-gray-100"
+                  placeOfSale === channel.id ? "bg-indigo-100" : "bg-gray-100"
                 }`}
               >
                 <i
                   className={`${channel.icon} text-lg ${
-                    formData.placeOfSale === channel.id
+                    placeOfSale === channel.id
                       ? "text-indigo-600"
                       : "text-gray-600"
                   }`}
@@ -440,7 +333,7 @@ export default function NewOrderPage() {
               <div className="flex-1">
                 <p
                   className={`font-medium ${
-                    formData.placeOfSale === channel.id
+                    placeOfSale === channel.id
                       ? "text-indigo-900"
                       : "text-gray-900"
                   }`}
@@ -454,34 +347,30 @@ export default function NewOrderPage() {
         ))}
       </div>
 
-      {formData.placeOfSale === "referral" && (
+      {placeOfSale === "referral" && (
         <div className="mt-4">
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Referral Source
           </label>
           <input
             type="text"
-            value={formData.referralSource}
-            onChange={(e) =>
-              handleInputChange("referralSource", e.target.value)
-            }
+            value={referralSource}
+            onChange={(e) => onInputChange("referralSource", e.target.value)}
             className="w-full p-3 border border-gray-200 rounded-lg text-sm"
             placeholder="Who referred this customer?"
           />
         </div>
       )}
 
-      {formData.placeOfSale === "marketplace" && (
+      {placeOfSale === "marketplace" && (
         <div className="mt-4">
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Marketplace/Event Name
           </label>
           <input
             type="text"
-            value={formData.marketplaceName}
-            onChange={(e) =>
-              handleInputChange("marketplaceName", e.target.value)
-            }
+            value={marketplaceName}
+            onChange={(e) => onInputChange("marketplaceName", e.target.value)}
             className="w-full p-3 border border-gray-200 rounded-lg text-sm"
             placeholder="Enter marketplace or event name"
           />
@@ -489,115 +378,340 @@ export default function NewOrderPage() {
       )}
     </div>
   );
+};
 
-  const renderStep3 = () => (
+interface ItemsPricingStepProps {
+  orderData: OrderData;
+  currency: string;
+  setCurrency: (currency: string) => void;
+  updateItem: (index: number, field: string, value: any) => void;
+  addItem: () => void;
+  removeItem: (index: number) => void;
+  calculateSubtotal: () => number;
+  calculateTotal: () => number;
+  formatCurrency: (amount: number) => string;
+  currentIndex: number | null;
+  setCurrentIndex: (index: number | null) => void;
+  setShowProductLookup: (val: boolean) => void;
+  setShowCostCalculator: (val: boolean) => void;
+  handleSaveCosting: (costItems: any) => void;
+  fabrics: string[];
+  onInputChange: (field: string, value: any) => void;
+}
+
+const ItemsPricingStep: React.FC<ItemsPricingStepProps> = ({
+  orderData,
+  currency,
+  setCurrency,
+  updateItem,
+  addItem,
+  removeItem,
+  calculateSubtotal,
+  calculateTotal,
+  formatCurrency,
+  currentIndex,
+  setCurrentIndex,
+  setShowProductLookup,
+  setShowCostCalculator,
+  handleSaveCosting,
+  onInputChange,
+  fabrics,
+}) => {
+  return (
     <div className="space-y-6">
-      <div className="text-center mb-6">
-        <h2 className="text-xl font-semibold text-gray-900 mb-2">
-          Item Selection
-        </h2>
-        <p className="text-sm text-gray-600">
-          Choose the type of garment to create
-        </p>
-      </div>
-
-      <button
-        onClick={() => setShowProductLookup(true)}
-        className="flex-1 py-2 px-4 bg-indigo-50 text-indigo-600 rounded-lg font-medium text-sm flex items-center justify-center space-x-2"
-      >
-        <i className="ri-search-line"></i>
-        <span>Find Existing Product</span>
-      </button>
-
-      {showProuctLookup && (
-        <ProductLookup
-          open={showProuctLookup}
-          onClose={() => setShowProductLookup(false)}
-          onSelect={handleProductSelect}
-          initialQuery=""
-          allowBackdropClose={true}
-        />
-      )}
-
-      {formData.itemType === "custom" && (
-        <div className="mt-4">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Custom Item Description
-          </label>
-          <input
-            type="text"
-            value={formData.customItem}
-            onChange={(e) => handleInputChange("customItem", e.target.value)}
-            className="w-full p-3 border border-gray-200 rounded-lg text-sm"
-            placeholder="Describe the custom item"
-          />
-        </div>
-      )}
-
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Fabric
-          </label>
-          <select
-            value={formData.fabric}
-            onChange={(e) => handleInputChange("fabric", e.target.value)}
-            className="w-full p-3 border border-gray-200 rounded-lg text-sm"
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-semibold text-gray-900">Items & Pricing</h2>
+        <div className="flex space-x-2">
+          <button
+            onClick={() => setCurrency("NGN")}
+            className={`px-3 py-1 rounded text-sm ${
+              currency === "NGN"
+                ? "bg-indigo-600 text-white"
+                : "bg-gray-200 text-gray-600"
+            }`}
           >
-            <option value="">Select fabric</option>
-            {fabrics.map((fabric) => (
-              <option key={fabric} value={fabric}>
-                {fabric}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Estimated Price
-          </label>
-          <input
-            type="number"
-            value={formData.estimatedPrice}
-            onChange={(e) =>
-              handleInputChange("estimatedPrice", e.target.value)
-            }
-            className="w-full p-3 border border-gray-200 rounded-lg text-sm"
-            placeholder="$0"
-          />
+            NGN
+          </button>
+          <button
+            onClick={() => setCurrency("USD")}
+            className={`px-3 py-1 rounded text-sm ${
+              currency === "USD"
+                ? "bg-indigo-600 text-white"
+                : "bg-gray-200 text-gray-600"
+            }`}
+          >
+            USD
+          </button>
         </div>
       </div>
 
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-3">
-          Color
-        </label>
-        <div className="grid grid-cols-5 gap-2">
-          {colors.map((color) => (
-            <button
-              key={color.name}
-              onClick={() => handleInputChange("color", color.name)}
-              className={`relative w-12 h-12 rounded-lg border-2 ${
-                formData.color === color.name
-                  ? "border-indigo-600"
-                  : "border-gray-200"
-              }`}
-              style={{ backgroundColor: color.value }}
-            >
-              {formData.color === color.name && (
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <i className="ri-check-line text-white text-sm"></i>
+      <div className="space-y-4">
+        {/* Items */}
+        <div className="space-y-3">
+          {orderData.items.map((item, index) => (
+            <div key={index} className="border border-gray-200 rounded-lg p-4">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex justify-between items-center w-full">
+                  <h4 className="font-medium text-gray-800">
+                    Item {index + 1}
+                  </h4>
+                  <button
+                    onClick={() => {
+                      setCurrentIndex(index);
+                      setShowProductLookup(true);
+                    }}
+                    className="py-2 px-4 bg-indigo-50 text-indigo-600 rounded-lg font-medium text-sm flex items-center justify-center space-x-2"
+                  >
+                    <i className="ri-search-line"></i>
+                    <span>Find Product</span>
+                  </button>
                 </div>
-              )}
-            </button>
+
+                {orderData.items.length > 1 && (
+                  <button
+                    onClick={() => removeItem(index)}
+                    className="w-6 h-6 flex items-center justify-center text-red-500"
+                  >
+                    <i className="ri-delete-bin-line text-sm"></i>
+                  </button>
+                )}
+              </div>
+
+              <div className="space-y-3">
+                <input
+                  type="text"
+                  placeholder="Item name"
+                  value={item.name}
+                  onChange={(e) => updateItem(index, "name", e.target.value)}
+                  className="w-full p-2 border border-gray-200 rounded text-sm"
+                />
+
+                <textarea
+                  placeholder="Item description"
+                  value={item.description}
+                  onChange={(e) =>
+                    updateItem(index, "description", e.target.value)
+                  }
+                  className="w-full p-2 border border-gray-200 rounded text-sm h-16"
+                />
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">
+                      Quantity
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      value={item.quantity}
+                      onChange={(e) =>
+                        updateItem(
+                          index,
+                          "quantity",
+                          parseInt(e.target.value) || 1
+                        )
+                      }
+                      className="w-full p-2 border border-gray-200 rounded text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">
+                      Unit Price
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={item.price}
+                      onChange={(e) =>
+                        updateItem(
+                          index,
+                          "price",
+                          parseFloat(e.target.value) || 0
+                        )
+                      }
+                      className="w-full p-2 border border-gray-200 rounded text-sm"
+                    />
+                  </div>
+                </div>
+                {item.costMethod !== "calculator" && (
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Fabric
+                      </label>
+                      <select
+                        value={item.fabricName}
+                        onChange={(e) => {
+                          updateItem(index, "fabricName", e.target.value);
+                        }}
+                        className="w-full p-3 border border-gray-200 rounded-lg text-sm"
+                      >
+                        <option value="">Select one</option>
+                        {fabrics.map((fabric) => (
+                          <option key={fabric} value={fabric}>
+                            {fabric}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Fabric Price
+                      </label>
+                      <input
+                        type="number"
+                        value={item.fabricPrice}
+                        onChange={(e) =>
+                          updateItem(index, "fabricPrice", e.target.value)
+                        }
+                        className="w-full p-3 border border-gray-200 rounded-lg text-sm"
+                        placeholder="$0"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex text-right text-sm font-medium text-gray-700 justify-between items-center">
+                  <button
+                    onClick={() => {
+                      setCurrentIndex(index);
+                      setShowCostCalculator(true);
+                    }}
+                    className="py-2 px-4 bg-indigo-50 text-indigo-600 rounded-lg font-medium text-sm flex items-center justify-center space-x-2"
+                  >
+                    <span>Cost Calculator </span>
+                  </button>
+                  Subtotal: {formatCurrency(item.price * item.quantity)}
+                </div>
+              </div>
+            </div>
           ))}
+
+          <button
+            onClick={addItem}
+            className="w-full py-3 border-2 border-dashed border-gray-300 rounded-lg text-gray-500 font-medium"
+          >
+            + Add Another Item
+          </button>
+        </div>
+
+        {/* Additional Costs */}
+        <div className="bg-gray-50 rounded-lg p-4">
+          <h4 className="font-medium text-gray-800 mb-3">Additional Costs</h4>
+
+          <div className="grid grid-cols-1 gap-3">
+            <div>
+              <label className="block text-sm text-gray-600 mb-2">
+                Handling & Shipping
+              </label>
+              <input
+                type="number"
+                placeholder="0.00"
+                value={orderData.shippingCost}
+                onChange={(e) => onInputChange("shippingCost", e.target.value)}
+                className="w-full p-3 border border-gray-200 rounded-lg text-sm"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm text-gray-600 mb-2">
+                VAT Rate (%)
+              </label>
+              <div className="flex space-x-2">
+                <input
+                  type="number"
+                  placeholder="7.5"
+                  value={orderData.vatOrTax}
+                  onChange={(e) =>
+                    onInputChange("vatOrTax", parseFloat(e.target.value))
+                  }
+                  className="flex-1 p-3 border border-gray-200 rounded-lg text-sm"
+                  step="0.1"
+                  min="0"
+                  max="100"
+                />
+                <div className="flex space-x-1">
+                  <button
+                    onClick={() => onInputChange("vatOrTax", 0)}
+                    className={`px-3 py-2 rounded text-xs ${
+                      orderData.vatOrTax === 0
+                        ? "bg-indigo-600 text-white"
+                        : "bg-gray-100 text-gray-600"
+                    }`}
+                  >
+                    0%
+                  </button>
+                  <button
+                    onClick={() => onInputChange("vatOrTax", 7.5)}
+                    className={`px-3 py-2 rounded text-xs ${
+                      orderData.vatOrTax === 7.5
+                        ? "bg-indigo-600 text-white"
+                        : "bg-gray-100 text-gray-600"
+                    }`}
+                  >
+                    7.5%
+                  </button>
+                  <button
+                    onClick={() => onInputChange("vatOrTax", 15)}
+                    className={`px-3 py-2 rounded text-xs ${
+                      orderData.vatOrTax === 15
+                        ? "bg-indigo-600 text-white"
+                        : "bg-gray-100 text-gray-600"
+                    }`}
+                  >
+                    15%
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Total Summary */}
+        <div className="bg-indigo-50 rounded-lg p-4">
+          <div className="space-y-2 text-sm">
+            <div className="flex justify-between">
+              <span>Items Subtotal:</span>
+              <span>{formatCurrency(calculateSubtotal())}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Shipping:</span>
+              <span>{formatCurrency(orderData.shippingCost)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>VAT/Tax:</span>
+              <span>
+                {formatCurrency(
+                  (orderData.vatOrTax * calculateSubtotal()) / 100
+                )}
+              </span>
+            </div>
+            <div className="border-t pt-2">
+              <div className="flex justify-between font-bold text-lg text-indigo-600">
+                <span>Total:</span>
+                <span>{formatCurrency(calculateTotal())}</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
   );
+};
 
-  const renderStep4 = () => (
+interface OrderDetailsStepProps {
+  orderData: OrderData;
+  onInputChange: (field: string, value: any) => void;
+  salesChannels: SalesChannel[];
+}
+
+const OrderDetailsStep: React.FC<OrderDetailsStepProps> = ({
+  orderData,
+  onInputChange,
+  salesChannels,
+}) => {
+  return (
     <div className="space-y-6">
       <div className="text-center mb-6">
         <h2 className="text-xl font-semibold text-gray-900 mb-2">
@@ -610,28 +724,27 @@ export default function NewOrderPage() {
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">
-          Delivery Date *
+          Expected Delivery Date *
         </label>
         <input
           type="date"
-          value={formData.deliveryDate}
-          onChange={(e) => handleInputChange("deliveryDate", e.target.value)}
+          value={orderData.deliveryDate}
+          onChange={(e) => onInputChange("deliveryDate", e.target.value)}
           className="w-full p-3 border border-gray-200 rounded-lg text-sm"
           min={new Date().toISOString().split("T")[0]}
         />
       </div>
 
-      <div className="flex items-center space-x-3">
-        <input
-          type="checkbox"
-          id="urgent"
-          checked={formData.urgentOrder}
-          onChange={(e) => handleInputChange("urgentOrder", e.target.checked)}
-          className="w-4 h-4 text-indigo-600 border-gray-300 rounded"
-        />
-        <label htmlFor="urgent" className="text-sm text-gray-700">
-          Urgent Order (+20% rush fee)
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Order Expiry Date
         </label>
+        <input
+          type="date"
+          value={orderData.expiryDate}
+          onChange={(e) => onInputChange("expiryDate", e.target.value)}
+          className="w-full p-3 border border-gray-200 rounded-lg"
+        />
       </div>
 
       <div className="grid grid-cols-2 gap-4">
@@ -641,8 +754,8 @@ export default function NewOrderPage() {
           </label>
           <input
             type="number"
-            value={formData.depositAmount}
-            onChange={(e) => handleInputChange("depositAmount", e.target.value)}
+            value={orderData.depositAmount}
+            onChange={(e) => onInputChange("depositAmount", e.target.value)}
             className="w-full p-3 border border-gray-200 rounded-lg text-sm"
             placeholder="$0"
           />
@@ -653,8 +766,8 @@ export default function NewOrderPage() {
             Payment Status
           </label>
           <select
-            value={formData.paymentStatus}
-            onChange={(e) => handleInputChange("paymentStatus", e.target.value)}
+            value={orderData.paymentStatus}
+            onChange={(e) => onInputChange("paymentStatus", e.target.value)}
             className="w-full p-3 border border-gray-200 rounded-lg text-sm"
           >
             <option value="pending">Pending</option>
@@ -663,65 +776,428 @@ export default function NewOrderPage() {
           </select>
         </div>
       </div>
+    </div>
+  );
+};
 
-      {/* Order Summary */}
-      <div className="bg-gray-50 rounded-lg p-4">
-        <h3 className="font-medium text-gray-900 mb-3">Order Summary</h3>
-        <div className="space-y-2 text-sm">
-          <div className="flex justify-between">
-            <span className="text-gray-600">Customer:</span>
-            <span className="font-medium">
-              {formData.customerName || "Not specified"}
-            </span>
+interface InvoicePreviewStepProps {
+  businessId: string;
+  orderData: OrderData;
+  onNotesChange: (notes: string) => void;
+  generateInvoiceNumber: () => string;
+  formatCurrency: (amount: number) => string;
+  calculateSubtotal: () => number;
+  calculateTotal: () => number;
+}
+
+const InvoicePreviewStep: React.FC<InvoicePreviewStepProps> = ({
+  businessId,
+  orderData,
+  onNotesChange,
+  generateInvoiceNumber,
+  formatCurrency,
+  calculateSubtotal,
+  calculateTotal,
+}) => {
+  return (
+    <div className="space-y-4">
+      <h2 className="text-lg font-semibold text-gray-900">Invoice Preview</h2>
+
+      <div className="mb-2">
+        <BusinessBanner businessId={businessId} />
+      </div>
+
+      {/* Invoice Preview */}
+      <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
+        <div className="text-center mb-6">
+          <h2 className="text-xl font-bold text-gray-900">PROFORMA INVOICE</h2>
+          <p className="text-gray-600">{generateInvoiceNumber()}</p>
+          <p>{new Date(orderData.issueDate).toLocaleDateString()}</p>
+        </div>
+
+        <div className="grid grid-cols-2 gap-6 mb-6">
+          <div>
+            <h3 className="font-semibold text-gray-900 mb-2">Bill To:</h3>
+            <p className="text-gray-700">{orderData.customer.name}</p>
+            <p className="text-gray-600 text-sm">{orderData.customer.email}</p>
+            <p className="text-gray-600 text-sm">{orderData.customer.phone}</p>
+            {orderData.customer.address && (
+              <p className="text-gray-600 text-sm mt-1">
+                {orderData.customer.address}
+              </p>
+            )}
           </div>
-          <div className="flex justify-between">
-            <span className="text-gray-600">Source:</span>
-            <span className="font-medium">
-              {salesChannels.find(
-                (channel) => channel.id === formData.placeOfSale
-              )?.name || "Not specified"}
-            </span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-gray-600">Item:</span>
-            <span className="font-medium">
-              {formData.itemType === "custom"
-                ? formData.customItem || "Custom Item"
-                : itemTypes.find((item) => item.id === formData.itemType)
-                    ?.name || "Not selected"}
-            </span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-gray-600">Fabric:</span>
-            <span className="font-medium">
-              {formData.fabric || "Not specified"}
-            </span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-gray-600">Color:</span>
-            <span className="font-medium">
-              {formData.color || "Not specified"}
-            </span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-gray-600">Delivery:</span>
-            <span className="font-medium">
-              {formData.deliveryDate || "Not set"}
-            </span>
-          </div>
-          <div className="border-t pt-2 mt-2">
-            <div className="flex justify-between">
-              <span className="text-gray-600">Estimated Price:</span>
-              <span className="font-semibold text-indigo-600">
-                ${formData.estimatedPrice || "0"}
-                {formData.urgentOrder && " (+20%)"}
+          <div className="text-right">
+            <div className="mb-2">
+              <span className="text-gray-600 text-sm">Expiry Date: </span>
+              <span className="font-medium">
+                {new Date(orderData.expiryDate).toLocaleDateString()}
+              </span>
+            </div>
+            <div>
+              <span className="text-gray-600 text-sm">Delivery: </span>
+              <span className="font-medium">
+                {new Date(orderData.deliveryDate).toLocaleDateString()}
               </span>
             </div>
           </div>
         </div>
+
+        {/* Items Table */}
+        <div className="mb-6">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-gray-200">
+                <th className="text-left py-2 text-sm font-semibold text-gray-900">
+                  Item
+                </th>
+                <th className="text-center py-2 text-sm font-semibold text-gray-900">
+                  Qty
+                </th>
+                <th className="text-right py-2 text-sm font-semibold text-gray-900">
+                  Amount
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {orderData.items.map((item, index) => (
+                <tr key={index} className="border-b border-gray-100">
+                  <td className="py-3">
+                    <div className="font-medium text-gray-900">{item.name}</div>
+                    {item.description && (
+                      <div className="text-sm text-gray-600">
+                        {item.description}
+                      </div>
+                    )}
+                  </td>
+                  <td className="text-center py-3 text-gray-700">
+                    {item.quantity}
+                  </td>
+                  <td className="text-right py-3 font-medium text-gray-900">
+                    {formatCurrency(item.price * item.quantity)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Totals */}
+        <div className="border-t border-gray-200 pt-4">
+          <div className="flex justify-end">
+            <div className="w-64">
+              <div className="flex justify-between py-1">
+                <span className="text-gray-600">Subtotal:</span>
+                <span className="font-medium">
+                  {formatCurrency(calculateSubtotal())}
+                </span>
+              </div>
+              {orderData.shippingCost > 0 && (
+                <div className="flex justify-between py-1">
+                  <span className="text-gray-600">Shipping:</span>
+                  <span className="font-medium">
+                    {formatCurrency(orderData.shippingCost)}
+                  </span>
+                </div>
+              )}
+
+              <div className="flex justify-between py-1">
+                <span className="text-gray-600">VAT/TAX:</span>
+                <span className="font-medium">
+                  {formatCurrency(
+                    (orderData.vatOrTax * calculateSubtotal()) / 100
+                  )}
+                </span>
+              </div>
+
+              <div className="border-t border-gray-200 pt-2 mt-2">
+                <div className="flex justify-between">
+                  <span className="text-lg font-bold text-gray-900">
+                    Total:
+                  </span>
+                  <span className="text-lg font-bold text-indigo-600">
+                    {formatCurrency(calculateTotal())}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-6 text-center text-sm text-gray-600">
+          <p>Thank you for your business!</p>
+          <p className="mt-2">
+            This is a proforma invoice. Payment is due upon acceptance.
+          </p>
+        </div>
+      </div>
+
+      {/* Notes */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Additional Notes
+        </label>
+        <textarea
+          value={orderData.notes}
+          onChange={(e) => onNotesChange(e.target.value)}
+          className="w-full p-3 border border-gray-200 rounded-lg h-20"
+          placeholder="Add any additional notes or terms..."
+        />
       </div>
     </div>
   );
+};
+
+const StepIndicator: React.FC<{ currentStep: number }> = ({ currentStep }) => {
+  return (
+    <div className="flex items-center justify-center space-x-1 mb-6">
+      {[1, 2, 3, 4, 5, 6].map((step) => (
+        <div key={step} className="flex items-center">
+          <div
+            className={`w-7 h-7 rounded-full flex items-center justify-center text-sm font-medium ${
+              step <= currentStep
+                ? "bg-indigo-600 text-white"
+                : "bg-gray-200 text-gray-500"
+            }`}
+          >
+            {step}
+          </div>
+          {step < 6 && (
+            <div
+              className={`w-6 h-0.5 ${
+                step < currentStep ? "bg-indigo-600" : "bg-gray-200"
+              }`}
+            ></div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+};
+
+export default function NewOrderPage() {
+  const router = useRouter();
+  const businessId = useBusinessId();
+  const [currentStep, setCurrentStep] = useState(1);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showCustomerLookup, setShowCustomerLookup] = useState(false);
+  const [customerSearchQuery, setCustomerSearchQuery] = useState("");
+  const [showCostCalculator, setShowCostCalculator] = useState(false);
+  const [showProductLookup, setShowProductLookup] = useState(false);
+  const [currentIndex, setCurrentIndex] = useState<number | null>(null);
+  const [selectedCustomer, setSelectedCustomer] = useState<
+    Customer | undefined
+  >(undefined);
+
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+
+  const [orderData, setOrderData] = useState<OrderData>({
+    customer: {
+      id: "",
+      name: "",
+      email: "",
+      phone: "",
+      address: "",
+      gender: "",
+      age: "",
+    },
+    items: [
+      {
+        id: "",
+        name: "",
+        description: "",
+        quantity: 1,
+        price: 0,
+        lowPrice: "",
+        highPrice: "",
+        options: {},
+        fabric: "",
+        costMethod: "",
+        fabricPrice: "",
+        fabricName: "",
+      },
+    ],
+    vatOrTax: 0,
+    measurements: {},
+    shippingCost: 0,
+    profit: 0,
+    estimatedDelivery: "",
+    notes: "",
+    issueDate: new Date().toISOString().split("T")[0],
+    expiryDate: "",
+    placeOfSale: "",
+    referralSource: "",
+    marketplaceName: "",
+    deliveryDate: "",
+    urgentOrder: false,
+    estimatedPrice: "",
+    depositAmount: "",
+    paymentStatus: "pending",
+  });
+
+  const [currency, setCurrency] = useState("NGN");
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat(currency === "NGN" ? "en-NG" : "en-US", {
+      style: "currency",
+      currency: currency,
+      minimumFractionDigits: 0,
+    }).format(amount);
+  };
+
+  const [customer, setCustomer] = useState({});
+
+  useEffect(() => {
+    setOrderData((prev) => ({
+      ...prev,
+      customer: { ...prev.customer, ...customer },
+    }));
+  }, [customer]);
+
+  const handleCustomerSelect = (customer: Customer) => {
+    setOrderData((prev) => ({
+      ...prev,
+      customer: {
+        ...prev.customer,
+        id: customer.id.toString(),
+        name: customer.name,
+        email: customer.email || "",
+        phone: customer.phone || "",
+        address: customer.address || "",
+        gender: customer.gender || "",
+        age: customer.age?.toString() || "",
+      },
+    }));
+    setSelectedCustomer(customer);
+    setShowCustomerLookup(false);
+    setCustomerSearchQuery("");
+  };
+
+  const handleInputChange = (field: keyof OrderData, value: any) => {
+    setOrderData((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
+  const handleMeasurementChange = (key: string, value: string) => {
+    setOrderData((prev) => ({
+      ...prev,
+      measurements: { ...prev.measurements, [key]: value },
+    }));
+  };
+
+  const updateItem = (index: number, field: string, value: any) => {
+    setOrderData((prev) => ({
+      ...prev,
+      items: prev.items.map((item, i) =>
+        i === index ? { ...item, [field]: value } : item
+      ),
+    }));
+  };
+
+  const removeItem = (index: number) => {
+    setOrderData((prev) => ({
+      ...prev,
+      items: prev.items.filter((_, i) => i !== index),
+    }));
+  };
+
+  const calculateSubtotal = () => {
+    return orderData.items.reduce(
+      (sum, item) => sum + item.price * item.quantity,
+      0
+    );
+  };
+
+  const calculateTotal = () => {
+    return (
+      calculateSubtotal() +
+      Number(orderData.shippingCost) +
+      (Number(orderData.vatOrTax) * calculateSubtotal()) / 100
+    );
+  };
+
+  const addItem = () => {
+    setOrderData((prev) => ({
+      ...prev,
+      items: [
+        ...prev.items,
+        {
+          id: "",
+          name: "",
+          description: "",
+          quantity: 1,
+          price: 0,
+          lowPrice: "",
+          highPrice: "",
+          options: {},
+          fabric: "",
+          costMethod: "",
+          fabricPrice: "",
+          fabricName: "",
+        },
+      ],
+    }));
+  };
+
+  const handleProductSelect = (product: Product) => {
+    if (currentIndex === null) return;
+    const { name, description, lowPrice, highPrice, options, id } = product;
+
+    setOrderData((prev) => ({
+      ...prev,
+      items: prev.items.map((item, i) =>
+        i === currentIndex
+          ? {
+              ...item,
+              name,
+              description: description || "",
+              id: id.toString(),
+              options,
+              lowPrice: lowPrice.toString(),
+              highPrice: highPrice.toString(),
+            }
+          : item
+      ),
+    }));
+
+    setShowProductLookup(false);
+  };
+
+  const generateInvoiceNumber = () => {
+    const date = new Date();
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const random = Math.floor(Math.random() * 1000)
+      .toString()
+      .padStart(3, "0");
+    return `INV-${year}-${month}${random}`;
+  };
+
+  const nextStep = () => {
+    if (currentStep < 6) {
+      setCurrentStep(currentStep + 1);
+    }
+  };
+
+  const prevStep = () => {
+    if (currentStep > 1) {
+      setCurrentStep(currentStep - 1);
+    }
+  };
+
+  const handleSaveCosting = (costItems: any) => {
+    console.log(
+      "===============costItems==============",
+      costItems.overallCost
+    );
+    if (currentIndex === null) return;
+    // Example: Update item with cost data
+    updateItem(currentIndex, "price", costItems.overallCost);
+    updateItem(currentIndex, "costMethod", "calculator");
+    setShowCostCalculator(false);
+  };
 
   const handleSubmit = async () => {
     setIsSubmitting(true);
@@ -730,52 +1206,11 @@ export default function NewOrderPage() {
       // Generate order ID
       const orderId = `#ORD-${String(Date.now()).slice(-3).padStart(3, "0")}`;
 
-      // Calculate final price with rush fee if urgent
-      const basePrice = parseFloat(formData.estimatedPrice) || 0;
-      const finalPrice = formData.urgentOrder ? basePrice * 1.2 : basePrice;
-
       // Create order object
       const newOrder = {
-        id: orderId,
-        customer: formData.customerName,
-        customerPhone: formData.customerPhone,
-        customerEmail: formData.customerEmail,
-        placeOfSale: formData.placeOfSale,
-        referralSource: formData.referralSource,
-        marketplaceName: formData.marketplaceName,
-        item:
-          formData.itemType === "custom"
-            ? formData.customItem
-            : itemTypes.find((item) => item.id === formData.itemType)?.name ||
-              "Custom Item",
-        status: "Pending",
-        amount: `$${finalPrice.toFixed(0)}`,
-        date: new Date().toISOString().split("T")[0],
-        deliveryDate: formData.deliveryDate,
-        progress: 0,
-        avatar: formData.customerName
-          .split(" ")
-          .map((n) => n[0])
-          .join("")
-          .toUpperCase(),
-        measurements: formData.measurements,
-        fabric: formData.fabric,
-        color: formData.color,
-        specialRequests: formData.specialRequests,
-        urgentOrder: formData.urgentOrder,
-        depositAmount: parseFloat(formData.depositAmount) || 0,
-        paymentStatus: formData.paymentStatus,
+        ...orderData,
+        estimatedPrice: calculateTotal(),
       };
-
-      // Store in localStorage (in a real app, this would be sent to a backend)
-      const existingOrders = JSON.parse(localStorage.getItem("orders") || "[]");
-      existingOrders.unshift(newOrder);
-      localStorage.setItem("orders", JSON.stringify(existingOrders));
-
-      // Show success message
-      alert(
-        `Order ${orderId} created successfully for ${formData.customerName}!`
-      );
 
       // Navigate back to orders page
       router.push("/orders");
@@ -786,6 +1221,91 @@ export default function NewOrderPage() {
       setIsSubmitting(false);
     }
   };
+
+  const renderStepContent = () => {
+    switch (currentStep) {
+      case 1:
+        return (
+          <CustomerInfoStep
+            orderData={orderData}
+            setCustomer={setCustomer}
+            showCustomerLookup={showCustomerLookup}
+            setShowCustomerLookup={setShowCustomerLookup}
+            handleCustomerSelect={handleCustomerSelect}
+            selectedCustomer={selectedCustomer}
+          />
+        );
+      case 2:
+        return (
+          <MeasurementsStep
+            gender={orderData.customer.gender}
+            measurements={orderData.measurements}
+            onMeasurementChange={handleMeasurementChange}
+            activeMeasurements={activeMeasurements}
+          />
+        );
+      case 3:
+        return (
+          <PlaceOfSaleStep
+            placeOfSale={orderData.placeOfSale}
+            referralSource={orderData.referralSource}
+            marketplaceName={orderData.marketplaceName}
+            onInputChange={handleInputChange}
+            salesChannels={salesChannels}
+          />
+        );
+      case 4:
+        return (
+          <ItemsPricingStep
+            orderData={orderData}
+            currency={currency}
+            setCurrency={setCurrency}
+            updateItem={updateItem}
+            addItem={addItem}
+            removeItem={removeItem}
+            calculateSubtotal={calculateSubtotal}
+            calculateTotal={calculateTotal}
+            formatCurrency={formatCurrency}
+            currentIndex={currentIndex}
+            setCurrentIndex={setCurrentIndex}
+            setShowProductLookup={setShowProductLookup}
+            setShowCostCalculator={setShowCostCalculator}
+            handleSaveCosting={handleSaveCosting}
+            fabrics={fabrics}
+            onInputChange={handleInputChange}
+          />
+        );
+      case 5:
+        return (
+          <OrderDetailsStep
+            orderData={orderData}
+            onInputChange={handleInputChange}
+            salesChannels={salesChannels}
+          />
+        );
+      case 6:
+        return (
+          <InvoicePreviewStep
+            businessId={businessId}
+            orderData={orderData}
+            onNotesChange={(notes) =>
+              setOrderData((prev) => ({ ...prev, notes }))
+            }
+            generateInvoiceNumber={generateInvoiceNumber}
+            formatCurrency={formatCurrency}
+            calculateSubtotal={calculateSubtotal}
+            calculateTotal={calculateTotal}
+          />
+        );
+      default:
+        return null;
+    }
+  };
+
+  const isNextDisabled =
+    (currentStep === 1 &&
+      (!orderData.customer.name || !orderData.customer.phone)) ||
+    (currentStep === 3 && !orderData.placeOfSale);
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
@@ -805,13 +1325,10 @@ export default function NewOrderPage() {
 
       {/* Content */}
       <div className="px-4 py-6 mt-16">
-        {renderStepIndicator()}
+        <StepIndicator currentStep={currentStep} />
 
         <div className="bg-white rounded-xl p-6 shadow-sm">
-          {currentStep === 1 && renderStep1()}
-          {currentStep === 2 && renderStep2()}
-          {currentStep === 3 && renderStep3()}
-          {currentStep === 4 && renderStep4()}
+          {renderStepContent()}
         </div>
 
         {/* Navigation Buttons */}
@@ -826,15 +1343,10 @@ export default function NewOrderPage() {
             </button>
           )}
 
-          {currentStep < 5 ? (
+          {currentStep < 6 ? (
             <button
               onClick={nextStep}
-              disabled={
-                (currentStep === 1 &&
-                  (!formData.customerName || !formData.customerPhone)) ||
-                (currentStep === 2 && !formData.placeOfSale) ||
-                (currentStep === 3 && !formData.itemType)
-              }
+              disabled={isNextDisabled}
               className="flex-1 py-3 bg-indigo-600 text-white rounded-lg font-medium disabled:bg-gray-300 disabled:cursor-not-allowed"
             >
               Next
@@ -842,7 +1354,7 @@ export default function NewOrderPage() {
           ) : (
             <button
               onClick={handleSubmit}
-              disabled={!formData.deliveryDate || isSubmitting}
+              disabled={!orderData.deliveryDate || isSubmitting}
               className="flex-1 py-3 bg-green-600 text-white rounded-lg font-medium disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
             >
               {isSubmitting ? (
@@ -858,15 +1370,47 @@ export default function NewOrderPage() {
         </div>
       </div>
 
-      {/* Customer Lookup Modal */}
+      {/* Modals */}
       {showCustomerLookup && (
         <CustomerLookup
           open={showCustomerLookup}
           onClose={() => setShowCustomerLookup(false)}
           onSelect={handleCustomerSelect}
+          initialQuery={customerSearchQuery}
+          allowBackdropClose={true}
+        />
+      )}
+
+      {showProductLookup && (
+        <ProductLookup
+          open={showProductLookup}
+          onClose={() => setShowProductLookup(false)}
+          onSelect={handleProductSelect}
           initialQuery=""
           allowBackdropClose={true}
         />
+      )}
+
+      {showCostCalculator && (
+        <div
+          className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Cost Calculator"
+        >
+          <div className="bg-white w-full max-w-md max-h-[90vh] rounded-2xl shadow-xl overflow-y-auto">
+            <h3 className="p-3 flex justify-center text-l font-bold">
+              Cost Calculator
+            </h3>
+            <Costing
+              onClose={() => setShowCostCalculator(false)}
+              showCurrencySelection={false}
+              showHeader={false}
+              onSave={handleSaveCosting}
+              hideFields={["VAT", "Handling"]}
+            />
+          </div>
+        </div>
       )}
     </div>
   );

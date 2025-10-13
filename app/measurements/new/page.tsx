@@ -39,6 +39,102 @@ export interface Measurement {
   method?: string; // e.g., "manual", "3D scan"
 }
 
+export const femaleMeasurements: MeasurementField[] = [
+  { key: "neck", label: "Neck (round)", unit: "inches" },
+  { key: "shoulder", label: "Shoulder", unit: "inches" },
+  { key: "bust", label: "Bust", unit: "inches" },
+  { key: "chest", label: "Chest", unit: "inches" },
+  {
+    key: "shoulderToUnderBust",
+    label: "Shoulder to Under Bust",
+    unit: "inches",
+  },
+  { key: "longSleeve", label: "Long Sleeve", unit: "inches" },
+  { key: "shortSleeve", label: "Short Sleeve", unit: "inches" },
+  { key: "waist", label: "Waist", unit: "inches" },
+  { key: "hips", label: "Hips", unit: "inches" },
+  { key: "thigh", label: "Thigh", unit: "inches" },
+  {
+    key: "halfBodyToWaist",
+    label: "Half Body Length (Neckline to waistline)",
+    unit: "inches",
+  },
+  {
+    key: "halfBodyToButtock",
+    label: "Half Body Length (Neckline to below buttock line)",
+    unit: "inches",
+  },
+  {
+    key: "bodyToKnee",
+    label: "Body Length (Neckline to the back of the knee)",
+    unit: "inches",
+  },
+  {
+    key: "fullBodyLength",
+    label: "Full Body Length (Neckline to the ankle)",
+    unit: "inches",
+  },
+  {
+    key: "trouserLength",
+    label: "Trouser Length (to the ankle or knee for knickers)",
+    unit: "inches",
+  },
+];
+
+export const maleMeasurements: MeasurementField[] = [
+  { key: "head", label: "Head", unit: "inches" },
+  { key: "neck", label: "Neck (round)", unit: "inches" },
+  {
+    key: "upperBodyToButtock",
+    label: "Upper Body Length (Neckline to below buttock line)",
+    unit: "inches",
+  },
+  {
+    key: "upperBodyToKnee",
+    label: "Upper Body Length (Neckline to the knee)",
+    unit: "inches",
+  },
+  {
+    key: "fullBodyLength",
+    label: "Full Body Length (Neckline to the ankle)",
+    unit: "inches",
+  },
+  {
+    key: "shoulder",
+    label: "Shoulder (shoulder to shoulder)",
+    unit: "inches",
+  },
+  {
+    key: "longSleeve",
+    label: "Long Sleeve (from the shoulder socket/Arm hole to the wrist)",
+    unit: "inches",
+  },
+  {
+    key: "shortSleeve",
+    label: "Short Sleeve (from the shoulder socket/Arm hole to the elbow)",
+    unit: "inches",
+  },
+  {
+    key: "cufflinkArea",
+    label: "Cufflink Area (same as wrist hole)",
+    unit: "inches",
+  },
+  {
+    key: "chest",
+    label: "Chest (round the chest area to the back)",
+    unit: "inches",
+  },
+  { key: "roundBody", label: "Round Body (Tummy)", unit: "inches" },
+  {
+    key: "trouserLength",
+    label: "Trouser Length (to the ankle or knee for knickers)",
+    unit: "inches",
+  },
+  { key: "waist", label: "Waist (Above bottom)", unit: "inches" },
+  { key: "hip", label: "Hip (round the bottom)", unit: "inches" },
+  { key: "thigh", label: "Thigh (of one leg)", unit: "inches" },
+];
+
 export default function MeasurementForm({
   setShowAddForm,
 }: {
@@ -61,102 +157,6 @@ export default function MeasurementForm({
   const [selectedCustomer, setSelectedCustomer] = useState<
     Customer | undefined
   >(undefined);
-
-  const femaleMeasurements: MeasurementField[] = [
-    { key: "neck", label: "Neck (round)", unit: "inches" },
-    { key: "shoulder", label: "Shoulder", unit: "inches" },
-    { key: "bust", label: "Bust", unit: "inches" },
-    { key: "chest", label: "Chest", unit: "inches" },
-    {
-      key: "shoulderToUnderBust",
-      label: "Shoulder to Under Bust",
-      unit: "inches",
-    },
-    { key: "longSleeve", label: "Long Sleeve", unit: "inches" },
-    { key: "shortSleeve", label: "Short Sleeve", unit: "inches" },
-    { key: "waist", label: "Waist", unit: "inches" },
-    { key: "hips", label: "Hips", unit: "inches" },
-    { key: "thigh", label: "Thigh", unit: "inches" },
-    {
-      key: "halfBodyToWaist",
-      label: "Half Body Length (Neckline to waistline)",
-      unit: "inches",
-    },
-    {
-      key: "halfBodyToButtock",
-      label: "Half Body Length (Neckline to below buttock line)",
-      unit: "inches",
-    },
-    {
-      key: "bodyToKnee",
-      label: "Body Length (Neckline to the back of the knee)",
-      unit: "inches",
-    },
-    {
-      key: "fullBodyLength",
-      label: "Full Body Length (Neckline to the ankle)",
-      unit: "inches",
-    },
-    {
-      key: "trouserLength",
-      label: "Trouser Length (to the ankle or knee for knickers)",
-      unit: "inches",
-    },
-  ];
-
-  const maleMeasurements: MeasurementField[] = [
-    { key: "head", label: "Head", unit: "inches" },
-    { key: "neck", label: "Neck (round)", unit: "inches" },
-    {
-      key: "upperBodyToButtock",
-      label: "Upper Body Length (Neckline to below buttock line)",
-      unit: "inches",
-    },
-    {
-      key: "upperBodyToKnee",
-      label: "Upper Body Length (Neckline to the knee)",
-      unit: "inches",
-    },
-    {
-      key: "fullBodyLength",
-      label: "Full Body Length (Neckline to the ankle)",
-      unit: "inches",
-    },
-    {
-      key: "shoulder",
-      label: "Shoulder (shoulder to shoulder)",
-      unit: "inches",
-    },
-    {
-      key: "longSleeve",
-      label: "Long Sleeve (from the shoulder socket/Arm hole to the wrist)",
-      unit: "inches",
-    },
-    {
-      key: "shortSleeve",
-      label: "Short Sleeve (from the shoulder socket/Arm hole to the elbow)",
-      unit: "inches",
-    },
-    {
-      key: "cufflinkArea",
-      label: "Cufflink Area (same as wrist hole)",
-      unit: "inches",
-    },
-    {
-      key: "chest",
-      label: "Chest (round the chest area to the back)",
-      unit: "inches",
-    },
-    { key: "roundBody", label: "Round Body (Tummy)", unit: "inches" },
-    {
-      key: "trouserLength",
-      label: "Trouser Length (to the ankle or knee for knickers)",
-      unit: "inches",
-    },
-    { key: "waist", label: "Waist (Above bottom)", unit: "inches" },
-    { key: "hip", label: "Hip (round the bottom)", unit: "inches" },
-    { key: "thigh", label: "Thigh (of one leg)", unit: "inches" },
-  ];
 
   const raw =
     typeof window !== "undefined" ? localStorage.getItem("user") : null;
