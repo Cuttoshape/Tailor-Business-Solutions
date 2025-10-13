@@ -16,6 +16,16 @@ import {
 } from "@/app/measurements/new/page";
 import Costing from "@/app/costing/page";
 
+const generateInvoiceNumber = () => {
+  const date = new Date();
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const random = Math.floor(Math.random() * 1000)
+    .toString()
+    .padStart(3, "0");
+  return `ORD-${year}-${month}${random}`;
+};
+
 const activeMeasurements = {
   female: femaleMeasurements,
   male: maleMeasurements,
@@ -51,7 +61,7 @@ type OrderData = {
   profit: number;
   estimatedDelivery: string;
   notes: string;
-  issueDate: string;
+  orderDate: string;
   expiryDate: string;
   placeOfSale: string;
   referralSource: string;
@@ -59,8 +69,8 @@ type OrderData = {
   deliveryDate: string;
   urgentOrder: boolean;
   estimatedPrice: string;
-  depositAmount: string;
-  paymentStatus: string;
+  advancePayment: string;
+  status: string;
 };
 
 type ItemType = {
@@ -754,8 +764,8 @@ const OrderDetailsStep: React.FC<OrderDetailsStepProps> = ({
           </label>
           <input
             type="number"
-            value={orderData.depositAmount}
-            onChange={(e) => onInputChange("depositAmount", e.target.value)}
+            value={orderData.advancePayment}
+            onChange={(e) => onInputChange("advancePayment", e.target.value)}
             className="w-full p-3 border border-gray-200 rounded-lg text-sm"
             placeholder="$0"
           />
@@ -766,8 +776,8 @@ const OrderDetailsStep: React.FC<OrderDetailsStepProps> = ({
             Payment Status
           </label>
           <select
-            value={orderData.paymentStatus}
-            onChange={(e) => onInputChange("paymentStatus", e.target.value)}
+            value={orderData.status}
+            onChange={(e) => onInputChange("status", e.target.value)}
             className="w-full p-3 border border-gray-200 rounded-lg text-sm"
           >
             <option value="pending">Pending</option>
@@ -784,7 +794,7 @@ interface InvoicePreviewStepProps {
   businessId: string;
   orderData: OrderData;
   onNotesChange: (notes: string) => void;
-  generateInvoiceNumber: () => string;
+  orderNumber: string;
   formatCurrency: (amount: number) => string;
   calculateSubtotal: () => number;
   calculateTotal: () => number;
@@ -794,7 +804,7 @@ const InvoicePreviewStep: React.FC<InvoicePreviewStepProps> = ({
   businessId,
   orderData,
   onNotesChange,
-  generateInvoiceNumber,
+  orderNumber,
   formatCurrency,
   calculateSubtotal,
   calculateTotal,
@@ -811,8 +821,8 @@ const InvoicePreviewStep: React.FC<InvoicePreviewStepProps> = ({
       <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
         <div className="text-center mb-6">
           <h2 className="text-xl font-bold text-gray-900">PROFORMA INVOICE</h2>
-          <p className="text-gray-600">{generateInvoiceNumber()}</p>
-          <p>{new Date(orderData.issueDate).toLocaleDateString()}</p>
+          <p className="text-gray-600">{orderNumber}</p>
+          <p>{new Date(orderData.orderDate).toLocaleDateString()}</p>
         </div>
 
         <div className="grid grid-cols-2 gap-6 mb-6">
@@ -985,6 +995,7 @@ export default function NewOrderPage() {
   const [showCostCalculator, setShowCostCalculator] = useState(false);
   const [showProductLookup, setShowProductLookup] = useState(false);
   const [currentIndex, setCurrentIndex] = useState<number | null>(null);
+  const [orderNumber, setOrderNumber] = useState(generateInvoiceNumber());
   const [selectedCustomer, setSelectedCustomer] = useState<
     Customer | undefined
   >(undefined);
@@ -1023,7 +1034,7 @@ export default function NewOrderPage() {
     profit: 0,
     estimatedDelivery: "",
     notes: "",
-    issueDate: new Date().toISOString().split("T")[0],
+    orderDate: new Date().toISOString().split("T")[0],
     expiryDate: "",
     placeOfSale: "",
     referralSource: "",
@@ -1031,8 +1042,8 @@ export default function NewOrderPage() {
     deliveryDate: "",
     urgentOrder: false,
     estimatedPrice: "",
-    depositAmount: "",
-    paymentStatus: "pending",
+    advancePayment: "",
+    status: "pending",
   });
 
   const [currency, setCurrency] = useState("NGN");
@@ -1165,16 +1176,6 @@ export default function NewOrderPage() {
     setShowProductLookup(false);
   };
 
-  const generateInvoiceNumber = () => {
-    const date = new Date();
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const random = Math.floor(Math.random() * 1000)
-      .toString()
-      .padStart(3, "0");
-    return `INV-${year}-${month}${random}`;
-  };
-
   const nextStep = () => {
     if (currentStep < 6) {
       setCurrentStep(currentStep + 1);
@@ -1188,13 +1189,10 @@ export default function NewOrderPage() {
   };
 
   const handleSaveCosting = (costItems: any) => {
-    console.log(
-      "===============costItems==============",
-      costItems.overallCost
-    );
     if (currentIndex === null) return;
     // Example: Update item with cost data
     updateItem(currentIndex, "price", costItems.overallCost);
+    updateItem(currentIndex, "costItems", costItems);
     updateItem(currentIndex, "costMethod", "calculator");
     setShowCostCalculator(false);
   };
@@ -1203,15 +1201,14 @@ export default function NewOrderPage() {
     setIsSubmitting(true);
 
     try {
-      // Generate order ID
-      const orderId = `#ORD-${String(Date.now()).slice(-3).padStart(3, "0")}`;
-
-      // Create order object
       const newOrder = {
         ...orderData,
+        orderNumber,
         estimatedPrice: calculateTotal(),
+        businessId,
       };
-
+      console.log("------NEW-----ORDER------", newOrder);
+      const result = await apiClient.orders.create(newOrder);
       // Navigate back to orders page
       router.push("/orders");
     } catch (error) {
@@ -1291,7 +1288,7 @@ export default function NewOrderPage() {
             onNotesChange={(notes) =>
               setOrderData((prev) => ({ ...prev, notes }))
             }
-            generateInvoiceNumber={generateInvoiceNumber}
+            orderNumber={orderNumber}
             formatCurrency={formatCurrency}
             calculateSubtotal={calculateSubtotal}
             calculateTotal={calculateTotal}
