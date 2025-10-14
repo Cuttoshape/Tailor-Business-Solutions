@@ -119,119 +119,74 @@ export default function Measurements() {
                 Enable Auto Measurement
               </button>
             </div>
+          </div>
+        )}
 
-            <div className="bg-white rounded-xl p-4 shadow-sm">
-              <h4 className="font-medium text-gray-800 mb-3">
-                Recent Auto Measurements
-              </h4>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+        <div className="px-4 space-y-4">
+          <div className="bg-white rounded-xl p-4 shadow-sm">
+            <h4 className="font-medium text-gray-800 mb-3">Measurements</h4>
+            <div className="space-y-3">
+              {measurements?.map((measurement) => (
+                <div
+                  onClick={() => {
+                    setSelectedMeasurement(measurement);
+                    setShowDetail(true);
+                  }}
+                  className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                >
                   <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                      <span className="text-sm font-medium text-blue-600">
-                        SJ
+                    <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
+                      <span className="text-sm font-medium text-purple-600">
+                        {measurement?.customer?.name
+                          ? measurement.customer.name.charAt(0) +
+                            measurement.customer.name.charAt(1)
+                          : ""}
                       </span>
                     </div>
                     <div>
                       <p className="font-medium text-gray-800 text-sm">
-                        Sarah Johnson
-                      </p>
-                      <p className="text-xs text-gray-500">With order #1234</p>
-                    </div>
-                  </div>
-                  <i className="ri-arrow-right-s-line text-gray-400"></i>
-                </div>
-
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                      <span className="text-sm font-medium text-green-600">
-                        MC
-                      </span>
-                    </div>
-                    <div>
-                      <p className="font-medium text-gray-800 text-sm">
-                        Mike Chen
+                        {measurement?.customer?.name}
                       </p>
                       <p className="text-xs text-gray-500">
-                        Shared measurement
+                        {measurement?.method}
                       </p>
                     </div>
                   </div>
                   <i className="ri-arrow-right-s-line text-gray-400"></i>
                 </div>
-              </div>
+              ))}
             </div>
           </div>
-        )}
 
-        {/* Manual Tab */}
-        {activeTab === "manual" && (
-          <div className="px-4 space-y-4">
-            <div className="bg-white rounded-xl p-4 shadow-sm">
-              <h4 className="font-medium text-gray-800 mb-3">Measurements</h4>
-              <div className="space-y-3">
-                {measurements?.map((measurement) => (
-                  <div
-                    onClick={() => {
-                      setSelectedMeasurement(measurement);
-                      setShowDetail(true);
-                    }}
-                    className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
-                  >
-                    <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
-                        <span className="text-sm font-medium text-purple-600">
-                          {measurement?.customer?.name
-                            ? measurement.customer.name.charAt(0) +
-                              measurement.customer.name.charAt(1)
-                            : ""}
-                        </span>
-                      </div>
-                      <div>
-                        <p className="font-medium text-gray-800 text-sm">
-                          {measurement?.customer?.name}
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          {measurement?.method}
-                        </p>
-                      </div>
-                    </div>
-                    <i className="ri-arrow-right-s-line text-gray-400"></i>
-                  </div>
-                ))}
-              </div>
+          <div className="bg-white rounded-xl p-6 shadow-sm">
+            <div className="text-center mb-4">
+              <img
+                src="https://readdy.ai/api/search-image?query=icon%2C%20measuring%20tape%20with%20notepad%2C%203D%20cartoon%20style%2C%20vibrant%20colors%2C%20the%20icon%20should%20take%20up%2070%25%20of%20the%20frame%2C%20isolated%20on%20white%20background%2C%20centered%20composition%2C%20soft%20lighting%2C%20clean%20modern%20look&width=100&height=100&seq=manual1&orientation=squarish"
+                alt="Manual Entry"
+                className="w-20 h-20 mx-auto object-cover rounded-lg mb-3"
+              />
+              <h3 className="font-medium text-gray-800">Quick Manual Entry</h3>
+              <p className="text-sm text-gray-600 mt-1">
+                Add measurements on the go
+              </p>
             </div>
 
-            <div className="bg-white rounded-xl p-6 shadow-sm">
-              <div className="text-center mb-4">
-                <img
-                  src="https://readdy.ai/api/search-image?query=icon%2C%20measuring%20tape%20with%20notepad%2C%203D%20cartoon%20style%2C%20vibrant%20colors%2C%20the%20icon%20should%20take%20up%2070%25%20of%20the%20frame%2C%20isolated%20on%20white%20background%2C%20centered%20composition%2C%20soft%20lighting%2C%20clean%20modern%20look&width=100&height=100&seq=manual1&orientation=squarish"
-                  alt="Manual Entry"
-                  className="w-20 h-20 mx-auto object-cover rounded-lg mb-3"
-                />
-                <h3 className="font-medium text-gray-800">
-                  Quick Manual Entry
-                </h3>
-                <p className="text-sm text-gray-600 mt-1">
-                  Add measurements on the go
-                </p>
-              </div>
-
-              <Link href="/measurements/new">
-                <button className="w-full bg-gray-800 text-white py-3 rounded-lg font-medium">
-                  + Manual Measurement
-                </button>
-              </Link>
-            </div>
+            <Link href="/measurements/new">
+              <button className="w-full bg-gray-800 text-white py-3 rounded-lg font-medium">
+                + Manual Measurement
+              </button>
+            </Link>
           </div>
-        )}
+        </div>
       </div>
 
       {showDetail && selectedMeasurement && (
         <MeasurementDetail
           measurement={selectedMeasurement}
           setShowDetail={setShowDetail}
+          onSubmit={() => {
+            fetchMeasurements();
+          }}
         />
       )}
     </div>

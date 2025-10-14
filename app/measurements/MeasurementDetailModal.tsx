@@ -5,6 +5,7 @@ import React, { useMemo, useState } from "react";
 import EditMeasurementModal from "./EditMeasurementModal";
 import ConfirmDeleteModal from "@/app/inventory/ConfirmDeleteModal";
 import { Measurement } from "./new/page";
+import apiClient from "@/lib/api";
 
 type Gender = "male" | "female";
 
@@ -17,11 +18,13 @@ type MeasurementField = {
 interface MeasurementDetailProps {
   measurement: Measurement;
   setShowDetail: (val: boolean) => void;
+  onSubmit: () => void;
 }
 
 export default function MeasurementDetail({
   measurement,
   setShowDetail,
+  onSubmit,
 }: MeasurementDetailProps) {
   const { customer, measurements } = measurement;
   const [openEdit, setOpenEdit] = useState(false);
@@ -129,6 +132,20 @@ export default function MeasurementDetail({
   const activeMeasurements =
     customer?.gender === "female" ? femaleMeasurements : maleMeasurements;
 
+  const handleDeleteConfirmation = async () => {
+    try {
+      setDeleting(true);
+      await apiClient.measurements.delete(measurement.id);
+      setShowDeleteModal(false);
+      setShowDetail(false);
+      onSubmit();
+    } catch (e) {
+      console.error("Failed to delete measurement", e);
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   return (
     <div className="fixed inset-0 bg-white z-50 overflow-y-auto mb-20">
       <div className="sticky top-0 bg-white border-b border-gray-200 px-4 py-3">
@@ -230,7 +247,10 @@ export default function MeasurementDetail({
       {openEdit && (
         <EditMeasurementModal
           open={openEdit}
-          measurement={{ id: measurement.id, measurements: measurement.measurements as any }}
+          measurement={{
+            id: measurement.id,
+            measurements: measurement.measurements as any,
+          }}
           gender={measurement?.customer?.gender}
           onClose={() => setOpenEdit(false)}
           onSaved={(updated) => {
@@ -247,19 +267,7 @@ export default function MeasurementDetail({
           confirmLabel="Delete"
           loading={deleting}
           onCancel={() => setShowDeleteModal(false)}
-          onConfirm={async () => {
-            try {
-              setDeleting(true);
-              const api = (await import("@/lib/api")).default;
-              await api.measurements.delete(measurement.id);
-              setShowDeleteModal(false);
-              setShowDetail(false);
-            } catch (e) {
-              console.error("Failed to delete measurement", e);
-            } finally {
-              setDeleting(false);
-            }
-          }}
+          onConfirm={handleDeleteConfirmation}
         />
       )}
     </div>
