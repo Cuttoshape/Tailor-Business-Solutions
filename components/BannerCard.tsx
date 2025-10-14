@@ -5,10 +5,12 @@ type Banner = {
   description?: string | null;
   ctaLabel?: string;
   onCtaClick?: () => void;
+  onEdit?: () => void; // optional edit action
 };
 
 export default function BannerCard({ banner }: { banner: Banner }) {
   const initial = (banner.title ?? "B").slice(0, 1).toUpperCase();
+  const sanitizedUrl = banner.imageUrl ? banner.imageUrl.replace(/\s/g, "%20") : undefined;
 
   return (
     <div className="relative rounded">
@@ -16,12 +18,10 @@ export default function BannerCard({ banner }: { banner: Banner }) {
         className="relative w-full overflow-hidden rounded-2xl ring-1 ring-black/5 shadow-xl"
         style={{
           minHeight: 150,
-          backgroundImage: banner.imageUrl
-            ? `url(${banner.imageUrl})`
-            : undefined,
+          backgroundImage: sanitizedUrl ? `url(${sanitizedUrl})` : undefined,
           backgroundSize: "cover",
           backgroundPosition: "center",
-          backgroundColor: banner.imageUrl ? undefined : "#EEF2FF", // fallback
+          backgroundColor: sanitizedUrl ? undefined : "#EEF2FF", // fallback
         }}
         role="img"
         aria-label={banner.title}
@@ -30,7 +30,7 @@ export default function BannerCard({ banner }: { banner: Banner }) {
         <div className="absolute inset-0 bg-[radial-gradient(120%_80%_at_0%_100%,rgba(0,0,0,0.55),transparent_60%)]" />
         <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/35 to-transparent" />
         {/* Subtle texture (only when no image) */}
-        {!banner.imageUrl && (
+        {!sanitizedUrl && (
           <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.35)_0%,rgba(255,255,255,0.1)_100%)]" />
         )}
 
@@ -56,19 +56,31 @@ export default function BannerCard({ banner }: { banner: Banner }) {
               ) : null}
 
               {/* Actions */}
-              {banner.ctaLabel && banner.onCtaClick && (
-                <div className="mt-4">
-                  <button
-                    onClick={banner.onCtaClick}
-                    className="inline-flex items-center gap-2 rounded-full px-4 py-1 text-sm font-medium
-                               bg-white/90 text-gray-900 hover:bg-white transition
-                               ring-1 ring-black/5 shadow-sm active:scale-[0.98]"
-                  >
-                    {banner.ctaLabel}
-                    <i className="ri-arrow-right-up-line text-base" />
-                  </button>
+              {(banner.ctaLabel && banner.onCtaClick) || banner.onEdit ? (
+                <div className="mt-4 flex items-center gap-2">
+                  {banner.ctaLabel && banner.onCtaClick && (
+                    <button
+                      onClick={banner.onCtaClick}
+                      className="inline-flex items-center gap-2 rounded-full px-4 py-1 text-sm font-medium
+                                 bg-white/90 text-gray-900 hover:bg-white transition
+                                 ring-1 ring-black/5 shadow-sm active:scale-[0.98]"
+                    >
+                      {banner.ctaLabel}
+                      <i className="ri-arrow-right-up-line text-base" />
+                    </button>
+                  )}
+                  {banner.onEdit && (
+                    <button
+                      type="button"
+                      onClick={banner.onEdit}
+                      title="Edit banner"
+                      className="inline-flex items-center justify-center rounded-full w-9 h-9 text-white/90 bg-white/20 hover:bg-white/30 ring-1 ring-white/30"
+                    >
+                      <i className="ri-pencil-line" />
+                    </button>
+                  )}
                 </div>
-              )}
+              ) : null}
             </div>
           </div>
         </div>

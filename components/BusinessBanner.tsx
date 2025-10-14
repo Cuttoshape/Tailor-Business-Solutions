@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import apiClient from "@/lib/api";
 import CreateBannerModal from "./CreateBannerModal";
 import BannerCard from "./BannerCard";
+import BusinessEditModal from "./BusinessEditModal";
 
 export type BannerData = {
   id?: number | string;
@@ -19,6 +20,7 @@ type GetBannerResponse = {
 export default function BusinessBanner({ businessId }: { businessId: string }) {
   const [banner, setBanner] = useState<BannerData | null>(null);
   const [open, setOpen] = useState(false);
+  const [openBizEdit, setOpenBizEdit] = useState(false);
 
   const fetchBusinessBanner = async () => {
     try {
@@ -44,6 +46,7 @@ export default function BusinessBanner({ businessId }: { businessId: string }) {
             ...banner,
             ctaLabel: "Contact Us",
             onCtaClick: () => console.log("/bookings"),
+            onEdit: () => setOpen(true),
           }}
         />
       ) : (
@@ -69,7 +72,13 @@ export default function BusinessBanner({ businessId }: { businessId: string }) {
           onCreated={(created: BannerData) => {
             setBanner(created);
             setOpen(false);
-            void fetchBusinessBanner(); // refresh to stay in sync with server
+            void fetchBusinessBanner();
+          }}
+          initialBanner={banner ?? undefined}
+          onUpdated={(updated: BannerData) => {
+            setBanner(updated);
+            setOpen(false);
+            void fetchBusinessBanner();
           }}
         />
       )}

@@ -126,6 +126,8 @@ class APIClient {
     update: (businessId: string, data: unknown) =>
       this.put(`/banners/${businessId}`, data),
     delete: (businessId: string) => this.delete(`/banners/${businessId}`),
+    updateById: (id: string | number, data: unknown) =>
+      this.put(`/banners/${id}`, data),
   };
 
   // ---------- Auth ----------
@@ -276,6 +278,12 @@ class APIClient {
     },
     update: (id: string, data: unknown) => this.put(`/products/${id}`, data),
     delete: (id: string) => this.delete(`/products/${id}`),
+  };
+
+  // ---------- Business ----------
+  business = {
+    getOne: (id: string) => this.get(`/business/${id}`),
+    update: (id: string, data: unknown) => this.put(`/business/${id}`, data),
   };
 
   // ---------- Analytics ----------

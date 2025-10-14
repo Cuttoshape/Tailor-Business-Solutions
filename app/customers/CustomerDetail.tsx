@@ -9,6 +9,8 @@ import {
   MouseEvent,
 } from "react";
 import classNames from "classnames";
+import EditCustomerModal from "./EditCustomerModal";
+import ConfirmDeleteModal from "@/app/inventory/ConfirmDeleteModal";
 import apiClient from "@/lib/api";
 
 type CustomerStatus = "vip" | "active" | "new" | "inactive" | string;
@@ -111,6 +113,9 @@ export default function CustomerDetail({
   );
   const [measLoading, setMeasLoading] = useState(true);
   const [measError, setMeasError] = useState<string | null>(null);
+  const [openEdit, setOpenEdit] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   // Refs for interactions
   const sheetRef = useRef<HTMLDivElement | null>(null);
@@ -235,14 +240,30 @@ export default function CustomerDetail({
           <h2 className="text-lg font-semibold text-gray-900">
             Customer Details
           </h2>
-          <button
-            ref={closeBtnRef}
-            onClick={onClose}
-            className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400"
-            aria-label="Close"
-          >
-            <i className="ri-close-line text-gray-600" />
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setOpenEdit(true)}
+              className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200"
+              title="Edit customer"
+            >
+              <i className="ri-pencil-line text-gray-700" />
+            </button>
+            <button
+              onClick={() => setShowDeleteModal(true)}
+              className="w-8 h-8 flex items-center justify-center rounded-full bg-red-50 hover:bg-red-100"
+              title="Delete customer"
+            >
+              <i className="ri-delete-bin-6-line text-red-600" />
+            </button>
+            <button
+              ref={closeBtnRef}
+              onClick={onClose}
+              className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400"
+              aria-label="Close"
+            >
+              <i className="ri-close-line text-gray-600" />
+            </button>
+          </div>
         </div>
 
         <div className="overflow-y-auto max-h-[calc(90vh-80px)]">
@@ -464,8 +485,20 @@ export default function CustomerDetail({
                     </div>
                   </div>
 
-                  <button className="w-full bg-teal-600 hover:bg-teal-700 text-white py-3 rounded-xl font-medium">
-                    Update Measurements
+                  <button
+                    className="w-full bg-teal-600 hover:bg-teal-700 text-white py-3 rounded-xl font-medium"
+                    onClick={async () => {
+                      // Fetch detailed measurement info for this customer (if API supports)
+                      try {
+                        const res: any = await apiClient.measurements.getCustomerMeasurements({ customerId: customer.id });
+                        if (res?.values) setMeasurements(res.values);
+                        if (res?.updatedAt) setMeasUpdatedAt(res.updatedAt);
+                      } catch (e) {
+                        console.error("Failed to refresh measurements", e);
+                      }
+                    }}
+                  >
+                    Refresh Measurements
                   </button>
                 </div>
               )}
@@ -535,6 +568,52 @@ export default function CustomerDetail({
             </section>
           </div>
         </div>
+
+        {openEdit && (
+          <EditCustomerModal
+            open={openEdit}
+            customer={{
+              id: customer.id,
+              name: customer.name,
+              email: customer.email ?? undefined,
+              phone: customer.phone ?? undefined,
+              address: customer.address ?? undefined,
+            }}
+            onClose={() => setOpenEdit(false)}
+            onSaved={(updated) => {
+              (customer as any).name = updated.name;
+              (customer as any).email = updated.email;
+              (customer as any).phone = updated.phone;
+              (customer as any).address = updated.address;
+              setOpenEdit(false);
+            }}
+          />
+        )}
+
+        {showDeleteModal && (
+          <ConfirmDeleteModal
+            open={showDeleteModal}
+            title="Delete customer"
+            description={`Are you sure you want to delete "${customer.name}"? This action cannot be undone.`}
+            confirmLabel="Delete"
+            loading={deleting}
+            onCancel={() => setShowDeleteModal(false)}
+            onConfirm={async () => {
+              if (!customer?.id) return;
+              try {
+                setDeleting(true);
+                await apiClient.customers.delete(String(customer.id));
+                window.dispatchEvent(new CustomEvent("customer-deleted", { detail: { id: customer.id } }));
+                setShowDeleteModal(false);
+                onClose();
+              } catch (err) {
+                console.error("Failed to delete customer", err);
+              } finally {
+                setDeleting(false);
+              }
+            }}
+          />
+        )}
       </div>
     </div>
   );

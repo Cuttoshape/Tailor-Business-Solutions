@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
+import EditMeasurementModal from "./EditMeasurementModal";
+import ConfirmDeleteModal from "@/app/inventory/ConfirmDeleteModal";
 import { Measurement } from "./new/page";
 
 type Gender = "male" | "female";
@@ -22,6 +24,9 @@ export default function MeasurementDetail({
   setShowDetail,
 }: MeasurementDetailProps) {
   const { customer, measurements } = measurement;
+  const [openEdit, setOpenEdit] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   console.log("----customer-------", customer);
 
@@ -137,7 +142,24 @@ export default function MeasurementDetail({
           <h1 className="font-semibold text-gray-800">
             Customer Measurement Details
           </h1>
-          <div className="w-8 h-8" />
+          <div className="w-8 h-8 flex items-center justify-center">
+            <button
+              type="button"
+              onClick={() => setOpenEdit(true)}
+              title="Edit measurements"
+              className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200"
+            >
+              <i className="ri-pencil-line text-gray-700" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowDeleteModal(true)}
+              title="Delete measurement"
+              className="w-8 h-8 flex items-center justify-center rounded-full bg-red-50 hover:bg-red-100 ml-2"
+            >
+              <i className="ri-delete-bin-6-line text-red-600" />
+            </button>
+          </div>
         </div>
 
         <div className="space-y-4 px-4">
@@ -205,6 +227,41 @@ export default function MeasurementDetail({
           </div>
         </div>
       </div>
+      {openEdit && (
+        <EditMeasurementModal
+          open={openEdit}
+          measurement={{ id: measurement.id, measurements: measurement.measurements as any }}
+          gender={measurement?.customer?.gender}
+          onClose={() => setOpenEdit(false)}
+          onSaved={(updated) => {
+            (measurement as any).measurements = updated.measurements as any;
+            setOpenEdit(false);
+          }}
+        />
+      )}
+      {showDeleteModal && (
+        <ConfirmDeleteModal
+          open={showDeleteModal}
+          title="Delete measurement"
+          description={`Are you sure you want to delete this measurement? This action cannot be undone.`}
+          confirmLabel="Delete"
+          loading={deleting}
+          onCancel={() => setShowDeleteModal(false)}
+          onConfirm={async () => {
+            try {
+              setDeleting(true);
+              const api = (await import("@/lib/api")).default;
+              await api.measurements.delete(measurement.id);
+              setShowDeleteModal(false);
+              setShowDetail(false);
+            } catch (e) {
+              console.error("Failed to delete measurement", e);
+            } finally {
+              setDeleting(false);
+            }
+          }}
+        />
+      )}
     </div>
   );
 }

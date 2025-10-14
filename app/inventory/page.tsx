@@ -5,6 +5,7 @@ import apiClient from "@/lib/api";
 import BusinessBanner from "@/components/BusinessBanner";
 import AddProductModal from "./AddProductModal";
 import ProductDetailsModal from "./ProductDetailsModal";
+import ConfirmDeleteModal from "@/app/inventory/ConfirmDeleteModal";
 import SearchAndFilters from "./SearchAndFilters";
 import MaterialsList from "./MaterialsList";
 import { useParams } from "next/navigation";
@@ -71,6 +72,9 @@ export default function TailorInventory() {
   const [showEditProductModal, setShowEditProductModal] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [productToDelete, setProductToDelete] = useState<Product | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -158,8 +162,13 @@ export default function TailorInventory() {
             products={products}
             handleViewDetails={handleViewDetails}
             handleEditProduct={(product) => {
+              setShowDetailsModal(false);
               setSelectedProduct(product);
               setShowEditProductModal(true);
+            }}
+            handleDeleteProduct={(product) => {
+              setProductToDelete(product);
+              setShowDeleteModal(true);
             }}
           />
         </div>
@@ -184,13 +193,45 @@ export default function TailorInventory() {
           setShowAddProductModal={setShowEditProductModal}
           fetchProducts={fetchProducts}
           mode="edit"
+          selectedProduct={selectedProduct}
         />
       )}
 
       {showDetailsModal && selectedProduct && (
         <ProductDetailsModal
           product={selectedProduct}
-          onClose={() => setSelectedProduct(null)}
+          onClose={() => {
+            setShowDetailsModal(false);
+            setSelectedProduct(null);
+          }}
+        />
+      )}
+
+      {showDeleteModal && productToDelete && (
+        <ConfirmDeleteModal
+          open={showDeleteModal}
+          title="Delete product"
+          description={`Are you sure you want to delete "${productToDelete.name}"? This action cannot be undone.`}
+          confirmLabel="Delete"
+          loading={deleting}
+          onCancel={() => {
+            setShowDeleteModal(false);
+            setProductToDelete(null);
+          }}
+          onConfirm={async () => {
+            if (!productToDelete?.id) return;
+            try {
+              setDeleting(true);
+              await apiClient.products.delete(productToDelete.id);
+              await fetchProducts();
+              setShowDeleteModal(false);
+              setProductToDelete(null);
+            } catch (err) {
+              console.error("Failed to delete product", err);
+            } finally {
+              setDeleting(false);
+            }
+          }}
         />
       )}
     </div>

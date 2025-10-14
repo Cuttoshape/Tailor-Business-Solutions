@@ -102,7 +102,21 @@ export default function AddProductModal({
       formData.append(`images[${index}]`, file);
     });
     try {
-      await apiClient.products.create(formData);
+      if (mode === "edit" && selectedProduct?.id) {
+        // For now, update only textual fields (name, description, options).
+        // If image updates are required for edit, backend must accept multipart PUT.
+        await apiClient.products.update(selectedProduct.id, {
+          name: newProduct.name,
+          description: newProduct.description,
+          options: {
+            availableColors: newProduct.availableColors,
+            availableDesigns: newProduct.availableDesigns,
+            fabricTypes: newProduct.fabricTypes,
+          },
+        });
+      } else {
+        await apiClient.products.create(formData);
+      }
       setImageFiles([]);
       setShowAddProductModal(false);
       fetchProducts();
@@ -225,7 +239,7 @@ export default function AddProductModal({
       <div className="bg-white rounded-xl w-full max-w-sm max-h-[90vh] overflow-y-auto">
         <div className="p-4 border-b sticky top-0 bg-white">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold">Add New Product</h3>
+            <h3 className="text-lg font-semibold">{mode === "edit" ? "Edit Product" : "Add New Product"}</h3>
             <button
               onClick={onClose}
               className="w-8 h-8 flex items-center justify-center"
@@ -534,7 +548,7 @@ export default function AddProductModal({
                   : "bg-gray-200 text-gray-400"
               }`}
             >
-              Add Product
+              {mode === "edit" ? "Save Changes" : "Add Product"}
             </button>
           </div>
         </div>
