@@ -1,4 +1,4 @@
-// File: /Users/ademolamonsurhammed/workspace/Tailor-Business-Solutions-web/app/customers/page.tsx
+// File: C:\Users\HP\Desktop\UNILIN-Project\Tailor-Business-Solutions\app\customers\page.tsx
 import * as entry from '../../../../app/customers/page.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 

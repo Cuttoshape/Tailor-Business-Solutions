@@ -34,6 +34,8 @@ export default function CreateBannerModal({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  // URL-based image update for edit mode
+  const [imageUrlInput, setImageUrlInput] = useState<string>(initialBanner?.imageUrl ?? "");
 
   // Clean up object URL
   useEffect(() => {
@@ -81,7 +83,7 @@ export default function CreateBannerModal({
     setFile(null);
     if (previewUrl?.startsWith("blob:")) URL.revokeObjectURL(previewUrl);
     // In edit mode, revert to existing banner image; otherwise clear
-    setPreviewUrl(isEdit ? sanitizedExistingUrl : null);
+    setPreviewUrl(isEdit ? (imageUrlInput?.trim() || sanitizedExistingUrl) : null);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
@@ -91,45 +93,36 @@ export default function CreateBannerModal({
     setError(null);
       try {
         if (isEdit && initialBanner?.id) {
-          // Update via PUT /banners/:id
+          // Frontend-only edit: use imageUrl field (no file uploads)
           if (file) {
-            const form = new FormData();
-            form.append("title", title.trim());
-            form.append("description", description.trim());
-            form.append("image", file);
-            const updated = (await apiClient.banners.updateById(
-              initialBanner.id,
-              form
-            )) as CreateBannerResponse;
-
-            const normalized: BannerData =
-              "banner" in updated ? updated.banner : updated;
-            const result: BannerData = {
-              id: normalized?.id ?? (initialBanner.id as any),
-              title: normalized?.title ?? title.trim(),
-              description: normalized?.description ?? description.trim(),
-              imageUrl: normalized?.imageUrl ?? initialBanner.imageUrl,
-            };
-            onUpdated?.(result);
-          } else {
-            const updated = (await apiClient.banners.updateById(
-              initialBanner.id,
-              {
-                title: title.trim(),
-                description: description.trim(),
-              }
-            )) as CreateBannerResponse;
-
-            const normalized: BannerData =
-              "banner" in updated ? updated.banner : updated;
-            const result: BannerData = {
-              id: normalized?.id ?? (initialBanner.id as any),
-              title: normalized?.title ?? title.trim(),
-              description: normalized?.description ?? description.trim(),
-              imageUrl: normalized?.imageUrl ?? initialBanner.imageUrl,
-            };
-            onUpdated?.(result);
+            setError(
+              "Replacing the banner image with a new file isn't supported without backend changes. Use the Image URL field instead."
+            );
+            return;
           }
+
+          const payload: Record<string, any> = {
+            title: title.trim(),
+            description: description.trim(),
+          };
+          const trimmedUrl = imageUrlInput.trim();
+          if (trimmedUrl) payload.imageUrl = trimmedUrl;
+
+          const updated = (await apiClient.banners.updateById(
+            initialBanner.id,
+            payload
+          )) as CreateBannerResponse;
+
+          const normalized: BannerData =
+            "banner" in updated ? updated.banner : updated;
+          const result: BannerData = {
+            id: normalized?.id ?? (initialBanner.id as any),
+            title: normalized?.title ?? title.trim(),
+            description: normalized?.description ?? description.trim(),
+            imageUrl:
+              normalized?.imageUrl ?? (trimmedUrl ? trimmedUrl : initialBanner.imageUrl),
+          };
+          onUpdated?.(result);
       } else {
         // Create path: require file
         // Primary source of truth: prop
@@ -211,7 +204,8 @@ export default function CreateBannerModal({
             />
 
             {(() => {
-              const effectivePreview = previewUrl || (isEdit ? sanitizedExistingUrl : null);
+              const effectivePreview =
+                previewUrl || (isEdit ? (imageUrlInput?.trim() || sanitizedExistingUrl) : null);
               if (effectivePreview) {
                 return (
                   <div className="relative rounded-lg overflow-hidden border">
@@ -226,45 +220,71 @@ export default function CreateBannerModal({
                       onClick={() => fileInputRef.current?.click()}
                       role="button"
                     />
-                    <div className="absolute top-2 right-2 flex gap-2">
-                      <button
-                        type="button"
-                        onClick={() => fileInputRef.current?.click()}
-                        className="px-2 py-1 rounded bg-white/90 text-gray-700 text-xs shadow hover:bg-white"
-                        title="Change image"
-                      >
-                        Change
-                      </button>
-                      {(!!previewUrl || !isEdit) && (
+                    {!isEdit && (
+                      <div className="absolute top-2 right-2 flex gap-2">
                         <button
-                          onClick={clearFile}
-                          className="px-2 py-1 rounded bg-white/90 text-gray-700 text-xs shadow hover:bg-white"
                           type="button"
-                          title="Remove selected image"
+                          onClick={() => fileInputRef.current?.click()}
+                          className="px-2 py-1 rounded bg-white/90 text-gray-700 text-xs shadow hover:bg-white"
+                          title="Change image"
                         >
-                          Remove
+                          Change
                         </button>
-                      )}
-                    </div>
+                        {(!!previewUrl || !isEdit) && (
+                          <button
+                            onClick={clearFile}
+                            className="px-2 py-1 rounded bg-white/90 text-gray-700 text-xs shadow hover:bg-white"
+                            type="button"
+                            title="Remove selected image"
+                          >
+                            Remove
+                          </button>
+                        )}
+                      </div>
+                    )}
                   </div>
                 );
               }
               return (
                 <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
-                  <label
-                    htmlFor="banner-image"
-                    className="cursor-pointer inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-indigo-50 text-indigo-700 hover:bg-indigo-100"
-                  >
-                    <i className="ri-image-add-line" />
-                    Choose image
-                  </label>
-                  <p className="text-xs text-gray-500 mt-2">
-                    Recommended aspect ratio ~ 3:1
-                  </p>
+                  {!isEdit ? (
+                    <>
+                      <label
+                        htmlFor="banner-image"
+                        className="cursor-pointer inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-indigo-50 text-indigo-700 hover:bg-indigo-100"
+                      >
+                        <i className="ri-image-add-line" />
+                        Choose image
+                      </label>
+                      <p className="text-xs text-gray-500 mt-2">
+                        Recommended aspect ratio ~ 3:1
+                      </p>
+                    </>
+                  ) : (
+                    <p className="text-sm text-gray-600">Provide an Image URL below to update the banner image.</p>
+                  )}
                 </div>
               );
             })()}
           </div>
+
+          {isEdit && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Image URL (edit mode)
+              </label>
+              <input
+                type="url"
+                placeholder="https://..."
+                value={imageUrlInput}
+                onChange={(e) => setImageUrlInput(e.currentTarget.value)}
+                className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Paste a direct image URL. File uploads during edit are not supported without backend changes.
+              </p>
+            </div>
+          )}
 
           {/* Title */}
           <div>

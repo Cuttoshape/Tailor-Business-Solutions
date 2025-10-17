@@ -21,6 +21,7 @@ export default function AddProductModal({
   mode = "add",
   selectedProduct = null,
 }: AddProductModalProps) {
+  const isEditMode = mode === "edit";
   const [newProduct, setNewProduct] = useState<NewProduct>({
     name: "",
     description: "",
@@ -74,7 +75,11 @@ export default function AddProductModal({
       setNewFabricCost("");
       setNewColor("");
       setNewDesign("");
-      setSelectedImageIndex(0);
+      // Initialize selected image from current primary image if available
+      const docs = selectedProduct?.documents?.map(({ url }) => url) || [];
+      const currentPrimary = selectedProduct?.imageUrl || "";
+      const idx = currentPrimary ? Math.max(0, docs.findIndex((u) => u === currentPrimary)) : 0;
+      setSelectedImageIndex(idx < 0 ? 0 : idx);
     }
   }, [mode]);
 
@@ -103,8 +108,9 @@ export default function AddProductModal({
     });
     try {
       if (mode === "edit" && selectedProduct?.id) {
-        // For now, update only textual fields (name, description, options).
-        // If image updates are required for edit, backend must accept multipart PUT.
+        // Update textual fields and primary image URL (existing URL only).
+        const candidate = newProduct.images[selectedImageIndex];
+        const primaryUrl = candidate && /^https?:\/\//i.test(candidate) ? candidate : undefined;
         await apiClient.products.update(selectedProduct.id, {
           name: newProduct.name,
           description: newProduct.description,
@@ -113,6 +119,7 @@ export default function AddProductModal({
             availableDesigns: newProduct.availableDesigns,
             fabricTypes: newProduct.fabricTypes,
           },
+          ...(primaryUrl ? { imageUrl: primaryUrl } : {}),
         });
       } else {
         await apiClient.products.create(formData);
@@ -145,6 +152,8 @@ export default function AddProductModal({
   };
 
   const removeImage = (index: number) => {
+    const urlToRemove = newProduct.images[index];
+
     setNewProduct((prev) => {
       const toRevoke = prev.images[index];
       if (toRevoke?.startsWith("blob:")) URL.revokeObjectURL(toRevoke);
@@ -158,7 +167,14 @@ export default function AddProductModal({
       return { ...prev, images: nextImages };
     });
 
-    setImageFiles((prev) => prev.filter((_, i) => i !== index));
+    // Only adjust imageFiles if the removed image was a newly added blob URL.
+    if (urlToRemove?.startsWith("blob:")) {
+      const blobUrls = newProduct.images.filter((u) => u.startsWith("blob:"));
+      const blobIndex = blobUrls.findIndex((u) => u === urlToRemove);
+      if (blobIndex >= 0) {
+        setImageFiles((prev) => prev.filter((_, i) => i !== blobIndex));
+      }
+    }
   };
 
   const addFabricType = () => {
@@ -260,12 +276,17 @@ export default function AddProductModal({
 
               {newProduct.images.length > 0 && (
                 <div className="mb-3">
-                  <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden mb-2">
+                  <div className="relative aspect-square bg-gray-100 rounded-lg overflow-hidden mb-2">
                     <img
                       src={newProduct.images[selectedImageIndex]}
                       alt="Product preview"
                       className="w-full h-full object-cover"
                     />
+                    {isEditMode && (
+                      <div className="absolute m-2 px-2 py-0.5 top-0 left-0 bg-indigo-600 text-white text-xs rounded">
+                        Primary
+                      </div>
+                    )}
                   </div>
 
                   <div className="flex space-x-2 overflow-x-auto">
@@ -319,6 +340,11 @@ export default function AddProductModal({
                     <p className="text-sm text-gray-600">Upload photos</p>
                     <p className="text-xs text-gray-500">Up to 6 images</p>
                   </label>
+                  {isEditMode && (
+                    <p className="mt-2 text-xs text-gray-500">
+                      In edit mode, only the primary image selection is saved. Adding/removing images requires backend support.
+                    </p>
+                  )}
                 </div>
               )}
             </div>

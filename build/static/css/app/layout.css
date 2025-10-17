@@ -529,6 +529,9 @@ video {
 .z-50{
   z-index: 50;
 }
+.m-2{
+  margin: 0.5rem;
+}
 .mx-2{
   margin-left: 0.5rem;
   margin-right: 0.5rem;
@@ -698,6 +701,12 @@ video {
 }
 .max-h-\[calc\(90vh-80px\)\]{
   max-height: calc(90vh - 80px);
+}
+.min-h-\[60vh\]{
+  min-height: 60vh;
+}
+.min-h-\[80px\]{
+  min-height: 80px;
 }
 .min-h-screen{
   min-height: 100vh;
@@ -1260,6 +1269,10 @@ video {
   padding-left: 1rem;
   padding-right: 1rem;
 }
+.py-0\.5{
+  padding-top: 0.125rem;
+  padding-bottom: 0.125rem;
+}
 .py-1{
   padding-top: 0.25rem;
   padding-bottom: 0.25rem;
@@ -1294,6 +1307,12 @@ video {
 }
 .pb-20{
   padding-bottom: 5rem;
+}
+.pb-24{
+  padding-bottom: 6rem;
+}
+.pb-36{
+  padding-bottom: 9rem;
 }
 .pb-6{
   padding-bottom: 1.5rem;
@@ -1426,6 +1445,10 @@ video {
 .text-gray-100{
   --tw-text-opacity: 1;
   color: rgb(243 244 246 / var(--tw-text-opacity, 1));
+}
+.text-gray-300{
+  --tw-text-opacity: 1;
+  color: rgb(209 213 219 / var(--tw-text-opacity, 1));
 }
 .text-gray-400{
   --tw-text-opacity: 1;
@@ -1831,9 +1854,9 @@ video {
   }
 }
 
-/*!***********************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************!*\
-  !*** css ./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[13].oneOf[2].use[1]!./node_modules/next/dist/build/webpack/loaders/next-font-loader/index.js??ruleSet[1].rules[13].oneOf[2].use[2]!./node_modules/next/font/google/target.css?{"path":"app/layout.tsx","import":"Inter","arguments":[{"subsets":["latin"],"display":"swap","variable":"--font-inter"}],"variableName":"inter"} ***!
-  \***********************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************/
+/*!************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************!*\
+  !*** css ./node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[13].oneOf[2].use[1]!./node_modules/next/dist/build/webpack/loaders/next-font-loader/index.js??ruleSet[1].rules[13].oneOf[2].use[2]!./node_modules/next/font/google/target.css?{"path":"app\\layout.tsx","import":"Inter","arguments":[{"subsets":["latin"],"display":"swap","variable":"--font-inter"}],"variableName":"inter"} ***!
+  \************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************/
 /* cyrillic-ext */
 @font-face {
   font-family: '__Inter_f367f3';
