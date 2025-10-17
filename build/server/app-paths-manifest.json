@@ -1,10 +1,7 @@
 {
+  "/orders/new/page": "app/orders/new/page.js",
   "/measurements/page": "app/measurements/page.js",
-  "/invoices/page": "app/invoices/page.js",
-  "/inventory/page": "app/inventory/page.js",
-  "/_not-found/page": "app/_not-found/page.js",
+  "/measurements/new/page": "app/measurements/new/page.js",
   "/orders/page": "app/orders/page.js",
-  "/customers/page": "app/customers/page.js",
-  "/page": "app/page.js",
-  "/costing/page": "app/costing/page.js"
+  "/orders/edit/page": "app/orders/edit/page.js"
 }

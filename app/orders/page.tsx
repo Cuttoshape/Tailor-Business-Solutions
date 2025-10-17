@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import ConfirmDeleteModal from "@/app/inventory/ConfirmDeleteModal";
 import { useBusinessId } from "../hooks/useBusinessId";
 import apiClient from "@/lib/api";
 import moment from "moment";
@@ -51,14 +52,22 @@ export default function Orders() {
   const [showOrderDetails, setShowOrderDetails] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [orderData, setOrderData] = useState<any>({});
+  const [editStatus, setEditStatus] = useState<string>("");
+  const [editDeliveryDate, setEditDeliveryDate] = useState<string>("");
+  const [editNotes, setEditNotes] = useState<string>("");
+  const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showStatusModal, setShowStatusModal] = useState(false);
+  const [statusChoice, setStatusChoice] = useState<string>("pending");
+
+  const fetchOrders = async () => {
+    const result: any = await apiClient.orders.getAll({ businessId });
+    setOrderData(result);
+  };
 
   useEffect(() => {
-    const fetchOrders = async () => {
-      const result: any = await apiClient.orders.getAll({ businessId });
-      setOrderData(result);
-      console.log("=================", result);
-    };
-    if (businessId) fetchOrders();
+    if (businessId) void fetchOrders();
   }, [businessId]);
 
   const filteredOrders =
@@ -81,6 +90,72 @@ export default function Orders() {
   const handleOrderClick = (order: any) => {
     setSelectedOrder(order);
     setShowOrderDetails(true);
+  };
+
+  // Prefill edit fields when opening the details modal
+  useEffect(() => {
+    if (showOrderDetails && selectedOrder) {
+      setEditStatus(selectedOrder.status || "pending");
+      setStatusChoice(selectedOrder.status || "pending");
+      setEditDeliveryDate(
+        selectedOrder.deliveryDate
+          ? moment(selectedOrder.deliveryDate).format("YYYY-MM-DD")
+          : ""
+      );
+      setEditNotes(selectedOrder.notes || "");
+      
+    }
+  }, [showOrderDetails, selectedOrder]);
+
+  const handleSaveChanges = async (e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    if (!selectedOrder?.id) return;
+    try {
+      setSaving(true);
+      await apiClient.orders.update(String(selectedOrder.id), {
+        status: editStatus,
+        deliveryDate: editDeliveryDate,
+        notes: editNotes,
+      });
+      await fetchOrders();
+      // Update selected order snapshot
+      setSelectedOrder((prev: any) =>
+        prev
+          ? {
+              ...prev,
+              status: editStatus,
+              deliveryDate: editDeliveryDate,
+              notes: editNotes,
+            }
+          : prev
+      );
+    } catch (err) {
+      console.error("Failed to update order", err);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDeleteOrder = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    if (!selectedOrder?.id) return;
+    setShowDeleteModal(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!selectedOrder?.id) return;
+    try {
+      setDeleting(true);
+      await apiClient.orders.delete(String(selectedOrder.id));
+      await fetchOrders();
+      setShowDeleteModal(false);
+      setShowOrderDetails(false);
+      setSelectedOrder(null);
+    } catch (err) {
+      console.error("Failed to delete order", err);
+    } finally {
+      setDeleting(false);
+    }
   };
 
   const firstItemName = (items: any[]) =>
@@ -204,13 +279,36 @@ export default function Orders() {
                     <p className="text-xs text-gray-500">{order.orderNumber}</p>
                   </div>
                 </div>
-                <span
-                  className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
-                    order.status
-                  )}`}
-                >
-                  {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
-                </span>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    className="w-8 h-8 flex items-center justify-center rounded hover:bg-gray-100"
+                    title="Share order"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      try {
+                        const url = `${window.location.origin}/orders/${order.id}`;
+                        if (navigator.share) {
+                          navigator.share({ title: `Order ${order.orderNumber}`, url });
+                        } else {
+                          navigator.clipboard.writeText(url);
+                          alert("Link copied to clipboard");
+                        }
+                      } catch (err) {
+                        console.error("Share failed", err);
+                      }
+                    }}
+                  >
+                    <i className="ri-share-line text-gray-600" />
+                  </button>
+                  <span
+                    className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
+                      order.status
+                    )}`}
+                  >
+                    {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                  </span>
+                </div>
               </div>
 
               <div className="mb-3">
@@ -235,14 +333,32 @@ export default function Orders() {
       {showOrderDetails && selectedOrder && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-end">
           <div className="bg-white w-full rounded-t-2xl p-6 max-h-[85vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center justify-between mb-6">
               <h3 className="font-semibold text-gray-800">Order Details</h3>
-              <button
-                onClick={() => setShowOrderDetails(false)}
-                className="w-8 h-8 flex items-center justify-center"
-              >
-                <i className="ri-close-line text-gray-600"></i>
-              </button>
+              <div className="flex items-center gap-2">
+                <Link
+                  href={selectedOrder ? `/orders/edit?id=${selectedOrder.id}` : "#"}
+                  className="w-8 h-8 flex items-center justify-center rounded hover:bg-gray-100"
+                  title="Edit order"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <i className="ri-pencil-line text-gray-600"></i>
+                </Link>
+                <button
+                  onClick={handleDeleteOrder}
+                  disabled={deleting}
+                  className="w-8 h-8 flex items-center justify-center rounded hover:bg-gray-100"
+                  title="Delete order"
+                >
+                  <i className={`ri-delete-bin-line ${deleting ? "text-gray-300" : "text-red-600"}`}></i>
+                </button>
+                <button
+                  onClick={() => setShowOrderDetails(false)}
+                  className="w-8 h-8 flex items-center justify-center"
+                >
+                  <i className="ri-close-line text-gray-600"></i>
+                </button>
+              </div>
             </div>
 
             <div className="space-y-6">
@@ -304,6 +420,8 @@ export default function Orders() {
                 </div>
               </div>
 
+              {/* Edit Order (toggle) removed */}
+
               {/* Progress */}
               <div>
                 <div className="flex items-center justify-between mb-2">
@@ -356,9 +474,16 @@ export default function Orders() {
                 </div>
               </div>
 
-              {/* Actions */}
-              <div className="flex space-x-3 pt-4">
-                <button className="flex-1 py-3 bg-indigo-600 text-white rounded-lg font-medium">
+              {/* Actions (keep original) */}
+              <div className="flex space-x-3 pt-4 pb-20">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setStatusChoice(selectedOrder?.status || "pending");
+                    setShowStatusModal(true);
+                  }}
+                  className="flex-1 py-3 bg-indigo-600 text-white rounded-lg font-medium"
+                >
                   Update Status
                 </button>
                 <button className="flex-1 py-3 border border-gray-200 rounded-lg font-medium text-gray-600">
@@ -369,6 +494,67 @@ export default function Orders() {
           </div>
         </div>
       )}
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmDeleteModal
+        open={showDeleteModal}
+        title="Delete order"
+        description={
+          selectedOrder ? (
+            <>
+              Are you sure you want to delete order <strong>{selectedOrder.orderNumber}</strong>?
+              This action cannot be undone.
+            </>
+          ) : (
+            "Are you sure you want to delete this order?"
+          )
+        }
+        confirmLabel="Delete"
+        loading={deleting}
+        onCancel={() => setShowDeleteModal(false)}
+        onConfirm={confirmDelete}
+      />
+
+      {/* Update Status Modal */}
+      <ConfirmDeleteModal
+        open={showStatusModal}
+        title="Update Order Status"
+        description={
+          <div className="space-y-3">
+            <p className="text-sm text-gray-700">Select a new progress status for this order.</p>
+            <select
+              value={statusChoice}
+              onChange={(e) => setStatusChoice(e.currentTarget.value)}
+              className="w-full p-2 border border-gray-200 rounded"
+            >
+              <option value="pending">Pending</option>
+              <option value="measuring">Measuring</option>
+              <option value="in_progress">In Progress</option>
+              <option value="completed">Completed</option>
+              <option value="delivered">Delivered</option>
+            </select>
+          </div>
+        }
+        confirmLabel="Update"
+        loading={saving}
+        onCancel={() => setShowStatusModal(false)}
+        onConfirm={async () => {
+          if (!selectedOrder?.id) return;
+          try {
+            setSaving(true);
+            await apiClient.orders.update(String(selectedOrder.id), { status: statusChoice });
+            await fetchOrders();
+            setSelectedOrder((prev: any) => (prev ? { ...prev, status: statusChoice } : prev));
+            setShowStatusModal(false);
+          } catch (err) {
+            console.error("Failed to update status", err);
+          } finally {
+            setSaving(false);
+          }
+        }}
+      />
+
+      
 
       {/* Bottom Navigation */}
       <div className="fixed bottom-0 w-full bg-white border-t border-gray-200 px-4 py-2">

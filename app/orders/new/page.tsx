@@ -14,7 +14,7 @@ import {
   femaleMeasurements,
   maleMeasurements,
 } from "@/app/measurements/new/page";
-import Costing from "@/app/costing/page";
+import Costing from "@/components/Costing";
 
 const generateInvoiceNumber = () => {
   const date = new Date();
@@ -251,6 +251,9 @@ interface MeasurementsStepProps {
   measurements: Record<string, string>;
   onMeasurementChange: (key: string, value: string) => void;
   activeMeasurements: typeof femaleMeasurements;
+  loadedFromProfile?: boolean;
+  onGenderChange: (gender: "female" | "male") => void;
+  loading?: boolean;
 }
 
 const MeasurementsStep: React.FC<MeasurementsStepProps> = ({
@@ -258,12 +261,46 @@ const MeasurementsStep: React.FC<MeasurementsStepProps> = ({
   measurements,
   onMeasurementChange,
   activeMeasurements,
+  loadedFromProfile,
+  onGenderChange,
+  loading,
 }) => {
   return (
     <div>
       <h4 className="font-medium text-gray-800 mb-3">
         Body Measurements {gender === "female" ? "(Female)" : "(Male)"}
       </h4>
+      {loading && (
+        <div className="mb-3 text-xs text-blue-700 bg-blue-50 border border-blue-200 rounded p-2">
+          Loading saved measurements...
+        </div>
+      )}
+      <div className="flex items-center gap-2 mb-4">
+        <span className="text-sm text-gray-600">Select gender:</span>
+        <button
+          type="button"
+          onClick={() => onGenderChange("female")}
+          className={`px-3 py-1 rounded text-sm ${
+            gender === "female" ? "bg-indigo-600 text-white" : "bg-gray-200 text-gray-700"
+          }`}
+        >
+          Female
+        </button>
+        <button
+          type="button"
+          onClick={() => onGenderChange("male")}
+          className={`px-3 py-1 rounded text-sm ${
+            gender === "male" ? "bg-indigo-600 text-white" : "bg-gray-200 text-gray-700"
+          }`}
+        >
+          Male
+        </button>
+      </div>
+      {loadedFromProfile && (
+        <div className="mb-3 text-xs text-green-700 bg-green-50 border border-green-200 rounded p-2">
+          Prefilled with saved measurements for this customer. You can edit any field.
+        </div>
+      )}
       <div className="space-y-3">
         {gender &&
           activeMeasurements[gender as "female" | "male"]?.map((m) => (
@@ -405,7 +442,6 @@ interface ItemsPricingStepProps {
   setShowProductLookup: (val: boolean) => void;
   setShowCostCalculator: (val: boolean) => void;
   handleSaveCosting: (costItems: any) => void;
-  fabrics: string[];
   onInputChange: (field: string, value: any) => void;
 }
 
@@ -425,7 +461,6 @@ const ItemsPricingStep: React.FC<ItemsPricingStepProps> = ({
   setShowCostCalculator,
   handleSaveCosting,
   onInputChange,
-  fabrics,
 }) => {
   return (
     <div className="space-y-6">
@@ -549,20 +584,39 @@ const ItemsPricingStep: React.FC<ItemsPricingStepProps> = ({
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         Fabric
                       </label>
-                      <select
-                        value={item.fabricName}
-                        onChange={(e) => {
-                          updateItem(index, "fabricName", e.target.value);
-                        }}
-                        className="w-full p-3 border border-gray-200 rounded-lg text-sm"
-                      >
-                        <option value="">Select one</option>
-                        {fabrics.map((fabric) => (
-                          <option key={fabric} value={fabric}>
-                            {fabric}
-                          </option>
-                        ))}
-                      </select>
+                      {(() => {
+                        const fabricTypes = (item as any)?.options?.fabricTypes as
+                          | Array<{ name: string; cost: number | string }>
+                          | undefined;
+                        const list = Array.isArray(fabricTypes)
+                          ? fabricTypes
+                          : [];
+                        return (
+                          <select
+                            value={item.fabricName}
+                            onChange={(e) => {
+                              const name = e.target.value;
+                              updateItem(index, "fabricName", name);
+                              const found = list.find((f) => f.name === name);
+                              if (found) {
+                                updateItem(
+                                  index,
+                                  "fabricPrice",
+                                  String(found.cost ?? "")
+                                );
+                              }
+                            }}
+                            className="w-full p-3 border border-gray-200 rounded-lg text-sm"
+                          >
+                            <option value="">Select one</option>
+                            {list.map((f) => (
+                              <option key={f.name} value={f.name}>
+                                {f.name}
+                              </option>
+                            ))}
+                          </select>
+                        );
+                      })()}
                     </div>
 
                     <div>
@@ -1047,6 +1101,8 @@ export default function NewOrderPage() {
   });
 
   const [currency, setCurrency] = useState("NGN");
+  const [measurementsLoaded, setMeasurementsLoaded] = useState(false);
+  const [loadingMeasurements, setLoadingMeasurements] = useState(false);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat(currency === "NGN" ? "en-NG" : "en-US", {
@@ -1066,6 +1122,13 @@ export default function NewOrderPage() {
   }, [customer]);
 
   const handleCustomerSelect = (customer: Customer) => {
+    const normalizeGender = (g?: string | null) => {
+      const v = (g || "").toString().trim().toLowerCase();
+      if (["female", "f"].includes(v)) return "female";
+      if (["male", "m"].includes(v)) return "male";
+      return "";
+    };
+    const normalizedGender = normalizeGender(customer.gender as any);
     setOrderData((prev) => ({
       ...prev,
       customer: {
@@ -1075,13 +1138,18 @@ export default function NewOrderPage() {
         email: customer.email || "",
         phone: customer.phone || "",
         address: customer.address || "",
-        gender: customer.gender || "",
+        gender: normalizedGender,
         age: customer.age?.toString() || "",
       },
     }));
     setSelectedCustomer(customer);
     setShowCustomerLookup(false);
     setCustomerSearchQuery("");
+    setMeasurementsLoaded(false);
+    // If already on step 2, prefill immediately
+    if (currentStep === 2 && customer.id) {
+      void prefillMeasurementsForCustomer(customer.id.toString());
+    }
   };
 
   const handleInputChange = (field: keyof OrderData, value: any) => {
@@ -1097,6 +1165,44 @@ export default function NewOrderPage() {
       measurements: { ...prev.measurements, [key]: value },
     }));
   };
+
+  const prefillMeasurementsForCustomer = async (custId: string) => {
+    try {
+      setLoadingMeasurements(true);
+      const resp: any = await apiClient.measurements.getAll({ customerId: custId });
+      const list = Array.isArray(resp?.measurements) ? resp.measurements : [];
+      if (list.length > 0) {
+        const latest = list[0];
+        const data = latest?.measurements || {};
+        const normalized: Record<string, string> = {};
+        Object.keys(data || {}).forEach((k) => {
+          const v = (data as any)[k];
+          if (v !== undefined && v !== null) normalized[k] = String(v);
+        });
+        setOrderData((prev) => ({ ...prev, measurements: { ...prev.measurements, ...normalized } }));
+        setMeasurementsLoaded(true);
+        // Ensure fields are visible if gender was not selected
+        setOrderData((prev) => {
+          if (!prev.customer.gender) {
+            return { ...prev, customer: { ...prev.customer, gender: "female" } };
+          }
+          return prev;
+        });
+      }
+    } catch (e) {
+      // ignore
+    } finally {
+      setLoadingMeasurements(false);
+    }
+  };
+
+  // Prefill measurements when entering Step 2 and a customer is selected
+  useEffect(() => {
+    const custId = orderData.customer.id;
+    if (currentStep === 2 && custId && !measurementsLoaded) {
+      void prefillMeasurementsForCustomer(custId);
+    }
+  }, [currentStep, orderData.customer.id, measurementsLoaded]);
 
   const updateItem = (index: number, field: string, value: any) => {
     setOrderData((prev) => ({
@@ -1168,6 +1274,16 @@ export default function NewOrderPage() {
               options,
               lowPrice: lowPrice.toString(),
               highPrice: highPrice.toString(),
+              // Set default unit price from product low price
+              price: Number(lowPrice) || 0,
+              // Initialize fabric selection from product options if available
+              ...(Array.isArray((options as any)?.fabricTypes) &&
+              (options as any).fabricTypes.length > 0
+                ? {
+                    fabricName: (options as any).fabricTypes[0].name || "",
+                    fabricPrice: String((options as any).fabricTypes[0].cost ?? ""),
+                  }
+                : {}),
             }
           : item
       ),
@@ -1239,6 +1355,13 @@ export default function NewOrderPage() {
             measurements={orderData.measurements}
             onMeasurementChange={handleMeasurementChange}
             activeMeasurements={activeMeasurements}
+            loadedFromProfile={measurementsLoaded}
+            onGenderChange={(g) =>
+              setOrderData((prev) => ({
+                ...prev,
+                customer: { ...prev.customer, gender: g },
+              }))
+            }
           />
         );
       case 3:
@@ -1268,7 +1391,6 @@ export default function NewOrderPage() {
             setShowProductLookup={setShowProductLookup}
             setShowCostCalculator={setShowCostCalculator}
             handleSaveCosting={handleSaveCosting}
-            fabrics={fabrics}
             onInputChange={handleInputChange}
           />
         );
@@ -1305,7 +1427,7 @@ export default function NewOrderPage() {
     (currentStep === 3 && !orderData.placeOfSale);
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
+    <div className="min-h-screen bg-gray-50 pb-36">
       {/* Header */}
       <div className="bg-white shadow-sm border-b px-4 py-4 fixed top-0 left-0 right-0 z-10">
         <div className="flex items-center justify-between">
@@ -1365,6 +1487,7 @@ export default function NewOrderPage() {
             </button>
           )}
         </div>
+        <div className="h-10" />
       </div>
 
       {/* Modals */}
